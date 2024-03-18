@@ -3,6 +3,7 @@ import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryToken
 import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals, AddressInput, AddressOutput } from './apis/individuals';
 
 import { AxiosError, RawAxiosRequestConfig } from 'axios';
+import { useCookies } from 'react-cookie';
 
 
 const MY_INDIVIDUAL_ID = "5bae1372-010f-4e2d-bbf7-51b925770223"
@@ -14,6 +15,8 @@ const DEFAULT_BENEFICIARY_ID = "51837c98-c2f3-45a7-ad17-6dc8a5928e2b"
 const DEFAULT_SECONDARY_TOKEN = ""
 
 const AddressComponent: React.FC = () => {
+    const [cookies, setCookie] = useCookies();
+
     const [address, setAddress] = useState<AddressOutput>();
     const [jwHost, setJWHost] = useState<string>('https://localhost');
     const [individualID, setIndividualID] = useState<string>(MY_INDIVIDUAL_ID);
@@ -307,22 +310,50 @@ const AddressComponent: React.FC = () => {
     }
 
     return (
-        <span>
+        <>
             <div className="relative flex flex-col overflow-hidden bg-gray-50 py-6 sm:py-12">
-                <form className="mx-5 my-5 w-full max-w-lg">
                     <div className="flex flex-wrap gap-3">
                         <div className="w-full">
-                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="address-label">Label </label>
-                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="address-label" type="text" placeholder="Home" />
+                            <label 
+                                className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" 
+                                htmlFor="address-label"
+                            >
+                                Label
+                            </label>
+                            <input
+                                className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
+                                id="address-label"
+                                type="text"
+                            />
                         </div>
                         <div className="w-full">
-                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="addressee"> Name </label>
-                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="addressee" type="text" placeholder="Mr. John Smith" value={address?.addressee} />
+                            <label
+                                className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
+                                htmlFor="addressee"
+                            >
+                                Name
+                            </label>
+                            <input
+                                className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
+                                id="addressee"
+                                type="text"
+                                value={address?.addressee}
+                            />
                         </div>
                         <div className="flex w-full gap-3">
                             <div className="w-1/3">
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="city"> City </label>
-                                <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="city" type="text" placeholder="Albuquerque" value={address?.city} />
+                                <label
+                                    className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
+                                    htmlFor="city"
+                                >
+                                    City
+                                </label>
+                                <input
+                                    className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none"
+                                    id="city"
+                                    type="text"
+                                    value={address?.city}
+                                />
                             </div>
                             <div className="w-1/3">
                                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="state"> State </label>
@@ -344,17 +375,28 @@ const AddressComponent: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </form>
             </div>
             <div className="relative flex flex-col overflow-hidden bg-gray-50 py-6 sm:py-12">
                 <div className="flex w-full items-center justify-start gap-3">
-                    <button id="btnGenPrimaryToken" onClick={createPrimaryToken} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Gen. Primary Token</button>
-                    <button id="btnGenSecondaryToken" onClick={createSecondaryToken} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Gen. Secondary Token</button>
+                    {
+                        cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" && cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
+                        <button id="btnGenPrimaryToken" onClick={createPrimaryToken} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Gen. Primary Token</button>
+                    }
+                    {
+                        cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" && cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
+                        <button id="btnGenSecondaryToken" onClick={createSecondaryToken} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Gen. Secondary Token</button>
+                    }
+
                 </div>
                 <div className="flex w-full items-center justify-start gap-3">
-                    <button id="btnGetAddressUsingPrimaryToken" onClick={fetchAddressForServiceProvider} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Primary Token</button>
-                    <button id="btnGetAddressUsingSecondaryToken" onClick={fetchAddressForBeneficiary} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Secondary Token</button>
-                    <button id="btnGetAddressUsingOwnerToken" onClick={fetchAddressForIndividual} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Owner Token</button>
+                    {
+                        cookies["X-USER-TYPE"] === "SERVICE_PROVIDER" &&
+                        <button id="btnGetAddressUsingPrimaryToken" onClick={fetchAddressForServiceProvider} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Primary Token</button>
+                    }
+                    {
+                        cookies["X-USER-TYPE"] === "BENEFICIARY" &&
+                        <button id="btnGetAddressUsingSecondaryToken" onClick={fetchAddressForBeneficiary} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Secondary Token</button>
+                    }
                 </div>
                 <div className="w-full">
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="jwHost">JustWhere Host</label>
@@ -368,24 +410,40 @@ const AddressComponent: React.FC = () => {
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="addressID">Address ID </label>
                     <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="addressID" type="text" placeholder="Address ID" value={addressID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)} />
                 </div>
-                <div className="w-full">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="serviceProviderID">Service Provider ID </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="serviceProviderID" type="text" placeholder="Service Provider ID" value={serviceProviderID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)} />
-                </div>
-                <div className="w-full">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="primaryToken">Service Provider Token </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="primaryToken" type="text" placeholder="Primary Token" value={primaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrimaryToken(event.target.value)} />
-                </div>
-                <div className="w-full">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="beneficiaryID">Beneficiary ID </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="beneficiaryID" type="text" placeholder="Beneficiary ID" value={beneficiaryID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)} />
-                </div>
-                <div className="w-full">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="secondaryToken">Secondary Token </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="secondaryToken" type="text" placeholder="Secondary Token" value={secondaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSecondaryToken(event.target.value)} />
-                </div>
+                {
+                    cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
+
+                    <div className="w-full">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="serviceProviderID">Service Provider ID </label>
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="serviceProviderID" type="text" placeholder="Service Provider ID" value={serviceProviderID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)} />
+                    </div>
+                }
+                {
+                    cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
+
+                    <div className="w-full">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="primaryToken">Service Provider Token </label>
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="primaryToken" type="text" placeholder="Primary Token" value={primaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrimaryToken(event.target.value)} />
+                    </div>
+                }
+                {
+                    cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" &&
+
+                    <div className="w-full">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="beneficiaryID">Beneficiary ID </label>
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="beneficiaryID" type="text" placeholder="Beneficiary ID" value={beneficiaryID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)} />
+                    </div>
+                }
+                {
+                    cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" &&
+
+                    <div className="w-full">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="secondaryToken">Secondary Token </label>
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="secondaryToken" type="text" placeholder="Secondary Token" value={secondaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSecondaryToken(event.target.value)} />
+                    </div>
+                }
             </div>
-        </span>
+        </>
     );
 }
 
