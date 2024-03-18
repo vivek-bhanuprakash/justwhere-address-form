@@ -312,69 +312,69 @@ const AddressComponent: React.FC = () => {
     return (
         <>
             <div className="relative flex flex-col overflow-hidden bg-gray-50 py-6 sm:py-12">
-                    <div className="flex flex-wrap gap-3">
-                        <div className="w-full">
-                            <label 
-                                className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" 
-                                htmlFor="address-label"
-                            >
-                                Label
-                            </label>
-                            <input
-                                className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
-                                id="address-label"
-                                type="text"
-                            />
-                        </div>
-                        <div className="w-full">
+                <div className="flex flex-wrap gap-3">
+                    <div className="w-full">
+                        <label
+                            className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
+                            htmlFor="address-label"
+                        >
+                            Label
+                        </label>
+                        <input
+                            className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
+                            id="address-label"
+                            type="text"
+                        />
+                    </div>
+                    <div className="w-full">
+                        <label
+                            className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
+                            htmlFor="addressee"
+                        >
+                            Name
+                        </label>
+                        <input
+                            className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
+                            id="addressee"
+                            type="text"
+                            value={address?.addressee}
+                        />
+                    </div>
+                    <div className="flex w-full gap-3">
+                        <div className="w-1/3">
                             <label
                                 className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
-                                htmlFor="addressee"
+                                htmlFor="city"
                             >
-                                Name
+                                City
                             </label>
                             <input
-                                className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none"
-                                id="addressee"
+                                className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none"
+                                id="city"
                                 type="text"
-                                value={address?.addressee}
+                                value={address?.city}
                             />
                         </div>
-                        <div className="flex w-full gap-3">
-                            <div className="w-1/3">
-                                <label
-                                    className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700"
-                                    htmlFor="city"
-                                >
-                                    City
-                                </label>
-                                <input
-                                    className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none"
-                                    id="city"
-                                    type="text"
-                                    value={address?.city}
-                                />
-                            </div>
-                            <div className="w-1/3">
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="state"> State </label>
-                                <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="state" type="text" placeholder="New Mexico" value={address?.state} />
-                            </div>
-                            <div className="w-1/3">
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="zip"> Zip </label>
-                                <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="zip" type="text" placeholder="90210" value={address?.zipCode} />
-                            </div>
+                        <div className="w-1/3">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="state"> State </label>
+                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="state" type="text" placeholder="New Mexico" value={address?.state} />
                         </div>
-                        <div className="flex w-full gap-3">
-                            <div className="w-1/2">
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="phone">Phone</label>
-                                <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="phone" type="text" placeholder="+1 (234) 555-1234" value={address?.phone} />
-                            </div>
-                            <div className="w-1/2">
-                                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="email"> Email </label>
-                                <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="email" type="text" placeholder="email@domain.com" value={address?.email} />
-                            </div>
+                        <div className="w-1/3">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="zip"> Zip </label>
+                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="zip" type="text" placeholder="90210" value={address?.zipCode} />
                         </div>
                     </div>
+                    <div className="flex w-full gap-3">
+                        <div className="w-1/2">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="phone">Phone</label>
+                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="phone" type="text" placeholder="+1 (234) 555-1234" value={address?.phone} />
+                        </div>
+                        <div className="w-1/2">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="email"> Email </label>
+                            <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:border-gray-500 focus:bg-white focus:outline-none" id="email" type="text" placeholder="email@domain.com" value={address?.email} />
+                        </div>
+                    </div>
+                </div>
             </div>
             <div className="relative flex flex-col overflow-hidden bg-gray-50 py-6 sm:py-12">
                 <div className="flex w-full items-center justify-start gap-3">

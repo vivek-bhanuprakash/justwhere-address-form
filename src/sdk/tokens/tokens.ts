@@ -1,18 +1,14 @@
 import { DefaultApi as APITokens, Configuration as APITokensConfig, PrimaryTokenInput, SecondaryTokenInput } from "../internal/apis/tokens";
-import { IndividualID, AddressID, ServiceProviderID, BeneficiaryID, PrimaryToken, SecondaryToken } from "../types/types";
+import { PrimaryTokenRequest, PrimaryTokenResponse, SecondaryTokenRequest, SecondaryTokenResponse } from "../types/types";
 
 
 
-const GenereratePrimaryToken = async (
-    hostport: string,
-    individualID: IndividualID,
-    addressID: AddressID,
-    serviceProviderID: ServiceProviderID): Promise<PrimaryToken> => {
+const GenereratePrimaryToken = async (hostport: string, request: PrimaryTokenRequest): Promise<PrimaryTokenResponse> => {
 
-        const input: PrimaryTokenInput = {
-        individualID: individualID,
-        addressID: addressID,
-        serviceProviderID: serviceProviderID
+    const input: PrimaryTokenInput = {
+        individualID: request.individualID,
+        addressID: request.addressID,
+        serviceProviderID: request.serviceProviderID
     }
 
     const config: APITokensConfig = new APITokensConfig({
@@ -26,19 +22,15 @@ const GenereratePrimaryToken = async (
 
     const response = await api.createPrimaryToken(input);
     const token = response.data.token || "";
-    return token;
+    return { request: request, token: token };
 }
 
-const GenererateSecondaryToken = async (
-    hostport: string,
-    serviceProviderID: ServiceProviderID,
-    beneficiaryID: BeneficiaryID, 
-    primaryToken: PrimaryToken): Promise<SecondaryToken> => {
+const GenererateSecondaryToken = async (hostport: string, request: SecondaryTokenRequest): Promise<SecondaryTokenResponse> => {
 
     const input: SecondaryTokenInput = {
-        serviceProviderID: serviceProviderID,
-        beneficiaryID: beneficiaryID,
-        token: primaryToken
+        serviceProviderID: request.serviceProviderID,
+        beneficiaryID: request.beneficiaryID,
+        token: request.primaryToken
     }
 
     const config: APITokensConfig = new APITokensConfig({
@@ -52,7 +44,7 @@ const GenererateSecondaryToken = async (
 
     const response = await api.createSecondaryToken(input);
     const token = response.data.token || "";
-    return token;
+    return {request: request, token: token};
 }
 
 export { GenereratePrimaryToken, GenererateSecondaryToken };

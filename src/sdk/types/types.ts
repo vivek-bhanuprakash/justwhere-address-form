@@ -1,4 +1,28 @@
 
+export interface PrimaryTokenRequest {
+    individualID: IndividualID;
+    addressID: AddressID;
+    serviceProviderID: ServiceProviderID;
+}
+
+export interface PrimaryTokenResponse {
+    request: PrimaryTokenRequest;
+    token: PrimaryToken;
+}
+
+export interface SecondaryTokenRequest {
+    individualID: IndividualID;
+    addressID: AddressID;
+    serviceProviderID: ServiceProviderID;
+    beneficiaryID: BeneficiaryID;
+    primaryToken: PrimaryToken;
+}
+
+export interface SecondaryTokenResponse {
+    request: SecondaryTokenRequest;
+    token: SecondaryToken;
+}
+
 type IndividualID = string
 type AddressID = string
 type ServiceProviderID = string
