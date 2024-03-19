@@ -17,4 +17,4 @@
 # 5. In the project root, run the following command
 ## - go run server/cmd/main/main.go
 ## This will run the demo server at http://localhost:3000 by default.
-
+# 6. Open your web browser and navigate to http://localhost:3000/login to be authenticated

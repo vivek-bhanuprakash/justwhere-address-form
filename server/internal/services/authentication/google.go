@@ -116,11 +116,11 @@ func (a *Authenticator) handleCallback(c *gin.Context) {
 		}
 	}
 
-	if isProvider == false {
+	if !isProvider {
 		c.SetCookie("X-USER-TYPE", "INDIVIDUAL", 1200, "/", "localhost", false, false)
 	}
 
-	c.Redirect(http.StatusFound, "/home")
+	c.Redirect(http.StatusFound, "/app/home")
 }
 
 // getUserInfo fetches user information using the OAuth 2.0 token.

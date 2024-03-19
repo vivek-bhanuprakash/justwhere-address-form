@@ -50,14 +50,17 @@ func main() {
 	}
 
 	router := gin.Default()
+	appGroup := router.Group("/app")
+	{
+		appGroup.StaticFS("/static", http.Dir("./build/static"))
+		appGroup.StaticFS("/index.html", http.Dir("./build/index.html"))
+		appGroup.StaticFS("/home", http.Dir("./build"))
+		appGroup.StaticFile("/manifest.json", "./build/manifest.json")
+		appGroup.StaticFile("/logo512.png", "./build/logo512.png")
+		appGroup.StaticFile("/logo192.png", "./build/logo192.png")
+		appGroup.StaticFile("/favicon.ico", "./build/favicon.ico")
 
-	router.StaticFS("/static", http.Dir("./build/static"))
-	router.StaticFS("/index.html", http.Dir("./build/index.html"))
-	router.StaticFS("/home", http.Dir("./build"))
-	router.StaticFile("/manifest.json", "./build/manifest.json")
-	router.StaticFile("/logo512.png", "./build/logo512.png")
-	router.StaticFile("/logo192.png", "./build/logo192.png")
-	router.StaticFile("/favicon.ico", "./build/favicon.ico")
+	}
 
 	// Set the scope to only include the "https://www.googleapis.com/auth/userinfo.email" scope for Google IdP
 	scopes := []string{"https://www.googleapis.com/auth/userinfo.email"}
