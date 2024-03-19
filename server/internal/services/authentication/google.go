@@ -46,8 +46,8 @@ func NewAuthenticator(router *gin.Engine, clientID, clientSecret, redirectURL st
 	}
 
 	// Setup authentication related handlers
-	router.GET("/login", authenticator.handleLogin)
-	router.GET("/auth/google/callback", authenticator.handleCallback)
+	router.GET("/app/login", authenticator.handleLogin)
+	router.GET("/app/auth/google/callback", authenticator.handleCallback)
 
 	log.Printf("Authenticator initialized with clientID: %s, redirectURL: %s", clientID, redirectURL)
 
