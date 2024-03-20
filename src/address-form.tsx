@@ -6,12 +6,12 @@ import { AxiosError, RawAxiosRequestConfig } from 'axios';
 import { useCookies } from 'react-cookie';
 
 
-const MY_INDIVIDUAL_ID = "5bae1372-010f-4e2d-bbf7-51b925770223"
-const MY_ADDRESS_ID = "ad277532-8424-4f7e-848b-6ba43164ebe6"
-const MY_OWNER_TOKEN = "4e70926e9dded1647349209ae6b5c71b59390f7c7d03d10d900b05b5d42a91d1649267d96be901e01f3a664920af32bf98b1068b523693bf35bbc36a4309b649acac5dcc239f1e5a2bc51d87d3311fbe41a3371d21046d010e392127e219517a59889e9b7ef9f929ec1d8b5e90cfc978591a519cf8364419903e4b679190"
-const DEFAULT_SERVICE_PROVIDER_ID = "1b8cef34-b25d-42cb-9a9e-5b2e9615dda7"
-const DEFAULT_PRIMARY_TOKEN = "73c32a30773387882a7e124e02dd1a473bd878e24bd00946571f6d7277fe1b982a2246f7f1618b859916d8ea0bc0c54cd7ab5167a05182f201fcdc34b1fc9ac1e6cc238896562bd74208f64d116d1a69806ff96a04c5cbf936170caeac58a04a5aa9244ab56ef12645bfcd9effd589a28a4dfe5b727776f7d2fb39f31222"
-const DEFAULT_BENEFICIARY_ID = "51837c98-c2f3-45a7-ad17-6dc8a5928e2b"
+const MY_INDIVIDUAL_ID = ""
+const MY_ADDRESS_ID = ""
+const MY_OWNER_TOKEN = ""
+const DEFAULT_SERVICE_PROVIDER_ID = ""
+const DEFAULT_PRIMARY_TOKEN = ""
+const DEFAULT_BENEFICIARY_ID = ""
 const DEFAULT_SECONDARY_TOKEN = ""
 
 const AddressComponent: React.FC = () => {
@@ -398,48 +398,48 @@ const AddressComponent: React.FC = () => {
                         <button id="btnGetAddressUsingSecondaryToken" onClick={fetchAddressForBeneficiary} className="focus:shadow-outline rounded bg-orange-400 px-4 py-2 font-normal text-white hover:bg-orange-600 focus:outline-none" type="button">Get Address w/Secondary Token</button>
                     }
                 </div>
-                <div className="w-full">
+                <div className="w-full px-3">
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="jwHost">JustWhere Host</label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="jwHost" type="text" placeholder="JustWhere Host" value={jwHost} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setJWHost(event.target.value)} />
+                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="jwHost" type="text" placeholder="JustWhere Host" value={jwHost} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setJWHost(event.target.value)} />
                 </div>
-                <div className="w-full">
+                <div className="w-full px-3">
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="individualID">Individual ID </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="individualID" type="text" placeholder="Individual ID" value={individualID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)} />
+                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="individualID" type="text" placeholder="Individual ID" value={individualID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)} />
                 </div>
-                <div className="w-full">
+                <div className="w-full px-3">
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="addressID">Address ID </label>
-                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="addressID" type="text" placeholder="Address ID" value={addressID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)} />
+                    <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="addressID" type="text" placeholder="Address ID" value={addressID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)} />
                 </div>
                 {
                     cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
 
-                    <div className="w-full">
+                    <div className="w-full px-3">
                         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="serviceProviderID">Service Provider ID </label>
-                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="serviceProviderID" type="text" placeholder="Service Provider ID" value={serviceProviderID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)} />
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="serviceProviderID" type="text" placeholder="Service Provider ID" value={serviceProviderID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)} />
                     </div>
                 }
                 {
                     cookies["X-USER-TYPE"] !== "BENEFICIARY" &&
 
-                    <div className="w-full">
+                    <div className="w-full px-3">
                         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="primaryToken">Service Provider Token </label>
-                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="primaryToken" type="text" placeholder="Primary Token" value={primaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrimaryToken(event.target.value)} />
+                        <textarea id="primaryToken" rows={4} className="block p-3 w-full text-smappearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" placeholder="Primary Token" value={primaryToken} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}></textarea>
                     </div>
                 }
                 {
                     cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" &&
 
-                    <div className="w-full">
+                    <div className="w-full px-3">
                         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="beneficiaryID">Beneficiary ID </label>
-                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="beneficiaryID" type="text" placeholder="Beneficiary ID" value={beneficiaryID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)} />
+                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="beneficiaryID" type="text" placeholder="Beneficiary ID" value={beneficiaryID} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)} />
                     </div>
                 }
                 {
                     cookies["X-USER-TYPE"] !== "SERVICE_PROVIDER" &&
 
-                    <div className="w-full">
+                    <div className="w-full px-3">
                         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700" htmlFor="secondaryToken">Secondary Token </label>
-                        <input className="block w-full appearance-none rounded border border-gray-200 bg-gray-200 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" id="secondaryToken" type="text" placeholder="Secondary Token" value={secondaryToken} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSecondaryToken(event.target.value)} />
+                        <textarea id="secondaryToken" rows={4} className="block p-3 w-full text-smappearance-none rounded border border-gray-200 bg-gray-200 px-3 py-3 leading-tight text-gray-700 focus:bg-white focus:outline-none" placeholder="Secondary Token" value={secondaryToken} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setSecondaryToken(event.target.value)}></textarea>
                     </div>
                 }
             </div>
