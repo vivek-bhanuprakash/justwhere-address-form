@@ -48,7 +48,9 @@ const AddressComponent: React.FC = () => {
 
         const api = new APITokens(config);
 
-        const response = await api.createPrimaryToken(input);
+        const response = await api.createPrimaryToken(input, {
+        		withCredentials:true
+        });
         const token = response.data.token || "";
         return token;
     }

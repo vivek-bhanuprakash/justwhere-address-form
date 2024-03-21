@@ -32,6 +32,9 @@ func init() {
 }
 
 var listenurl = flag.String("listenurl", ":3000", "-listenurl [prefix]:<port>")
+var tls = flag.Bool("tls", false, "-tls")
+var cert = flag.String("certfile", "./conf/cert.crt", "-certfile <certfilepathname>")
+var key = flag.String("keyfile", "./conf/cert.key", "-keyfile <keyfilepathname>")
 
 func main() {
 
@@ -82,5 +85,9 @@ func main() {
 
 	flag.Parse()
 
-	log.Fatal(router.Run(*listenurl))
+	if *tls {
+		log.Fatal(router.RunTLS(*listenurl, *cert, *key))
+	} else {
+		log.Fatal(router.Run(*listenurl))
+	}
 }
