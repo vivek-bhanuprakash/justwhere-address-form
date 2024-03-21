@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component, useEffect, useState } from 'react';
 import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from './apis/tokens';
 import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals, AddressInput, AddressOutput } from './apis/individuals';
 
@@ -31,6 +31,47 @@ const AddressComponent: React.FC = () => {
 
     const [beneficiaryID, setBeneficiaryID] = useState<string>(DEFAULT_BENEFICIARY_ID);
     const [secondaryToken, setSecondaryToken] = useState<string>(DEFAULT_SECONDARY_TOKEN);
+
+    useEffect(() => {
+        const abortController: AbortController = new AbortController();
+        const path = `${window.location.protocol}"//"${window.location.host}/app/data`
+        fetch("/app/data", { signal: abortController.signal })
+            .then(response => response.json())
+            .then(data => {
+                const hostport: string = data["hostport"] || "";
+                const indID: string = data["individualID"] || "";
+                const adrID: string = data["addressID"] || "";
+                const spID: string = data["serviceProviderID"] || "";
+                const pTkn: string = data["primaryToken"] || "";
+                const benID: string = data["beneficiaryID"] || "";
+                const sTkn: string = data["secondaryToken"] || "";
+
+                if(hostport !== "")
+                    setJWHost(hostport)
+                if(indID !== "")
+                    setIndividualID(indID)
+                if(adrID !== "")
+                    setAddressID(adrID)
+                if(spID !== "")
+                    setServiceProviderID(spID)
+                if(pTkn !== "")
+                    setPrimaryToken(pTkn)
+                if(benID !== "")
+                    setBeneficiaryID(benID)
+                if(sTkn !== "")
+                    setSecondaryToken(sTkn)
+
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            })
+
+        return () => {
+            abortController.abort();
+            console.log("aborted any pending fetch")
+        };
+    }, []);
 
     const genereratePrimaryToken = async (individualID: string, addressID: string, serviceProviderID: string): Promise<string> => {
         const input: PrimaryTokenInput = {

@@ -62,7 +62,13 @@ func main() {
 		appGroup.StaticFile("/logo512.png", "./build/logo512.png")
 		appGroup.StaticFile("/logo192.png", "./build/logo192.png")
 		appGroup.StaticFile("/favicon.ico", "./build/favicon.ico")
-
+		appGroup.GET("/data", func(ctx *gin.Context) {
+			// read the ./data/data.json file and return it as json response
+			ctx.File("./data/data.json")
+			log.Println("Sending ./data/data.json file")
+			ctx.Abort()
+			return
+		})
 	}
 
 	// Set the scope to only include the "https://www.googleapis.com/auth/userinfo.email" scope for Google IdP
