@@ -191,6 +191,25 @@ export interface AddressOutput {
 /**
  * 
  * @export
+ * @interface GetCurrentUserInfo200Response
+ */
+export interface GetCurrentUserInfo200Response {
+    /**
+     * Unique identifier for the user
+     * @type {string}
+     * @memberof GetCurrentUserInfo200Response
+     */
+    'UserID'?: string;
+    /**
+     * Unique identifier for the individual
+     * @type {string}
+     * @memberof GetCurrentUserInfo200Response
+     */
+    'IndividualID'?: string;
+}
+/**
+ * 
+ * @export
  * @interface Individual
  */
 export interface Individual {
@@ -323,13 +342,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteAddress: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        deleteAddressByID: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'addressId' is not null or undefined
-            assertParamExists('deleteAddress', 'addressId', addressId)
+            assertParamExists('deleteAddressByID', 'addressId', addressId)
             // verify required parameter 'beneficiaryToken' is not null or undefined
-            assertParamExists('deleteAddress', 'beneficiaryToken', beneficiaryToken)
+            assertParamExists('deleteAddressByID', 'beneficiaryToken', beneficiaryToken)
             // verify required parameter 'beneficiaryId' is not null or undefined
-            assertParamExists('deleteAddress', 'beneficiaryId', beneficiaryId)
+            assertParamExists('deleteAddressByID', 'beneficiaryId', beneficiaryId)
             const localVarPath = `/addresses/{addressId}`
                 .replace(`{${"addressId"}}`, encodeURIComponent(String(addressId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -368,6 +387,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Delete an individual by ID
+         * @param {string} id ID of the individual
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteIndividualByID: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteIndividualByID', 'id', id)
+            const localVarPath = `/individuals/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Get a specific address for an individual by ID and address ID
          * @param {string} addressId ID of the address
          * @param {string} beneficiaryToken Beneficiary token for authorization
@@ -376,13 +429,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getAddress: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getAddressByID: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'addressId' is not null or undefined
-            assertParamExists('getAddress', 'addressId', addressId)
+            assertParamExists('getAddressByID', 'addressId', addressId)
             // verify required parameter 'beneficiaryToken' is not null or undefined
-            assertParamExists('getAddress', 'beneficiaryToken', beneficiaryToken)
+            assertParamExists('getAddressByID', 'beneficiaryToken', beneficiaryToken)
             // verify required parameter 'beneficiaryId' is not null or undefined
-            assertParamExists('getAddress', 'beneficiaryId', beneficiaryId)
+            assertParamExists('getAddressByID', 'beneficiaryId', beneficiaryId)
             const localVarPath = `/addresses/{addressId}`
                 .replace(`{${"addressId"}}`, encodeURIComponent(String(addressId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -420,15 +473,45 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Retrieves userinfo in JSON format
+         * @summary Retrieve Userinfo
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getCurrentUserInfo: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/userinfo`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary Get an individual by ID
          * @param {string} id ID of the individual
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getIndividual: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        getIndividualByID: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('getIndividual', 'id', id)
+            assertParamExists('getIndividualByID', 'id', id)
             const localVarPath = `/individuals/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -485,40 +568,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary Delete an individual by ID
-         * @param {string} id ID of the individual
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        individualsIdDelete: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('individualsIdDelete', 'id', id)
-            const localVarPath = `/individuals/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @summary Update an existing address for an individual by ID and address ID
          * @param {string} addressId ID of the address
          * @param {string} beneficiaryToken Beneficiary token for authorization
@@ -528,15 +577,15 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateAddress: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateAddressByID: async (addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'addressId' is not null or undefined
-            assertParamExists('updateAddress', 'addressId', addressId)
+            assertParamExists('updateAddressByID', 'addressId', addressId)
             // verify required parameter 'beneficiaryToken' is not null or undefined
-            assertParamExists('updateAddress', 'beneficiaryToken', beneficiaryToken)
+            assertParamExists('updateAddressByID', 'beneficiaryToken', beneficiaryToken)
             // verify required parameter 'beneficiaryId' is not null or undefined
-            assertParamExists('updateAddress', 'beneficiaryId', beneficiaryId)
+            assertParamExists('updateAddressByID', 'beneficiaryId', beneficiaryId)
             // verify required parameter 'addressInput' is not null or undefined
-            assertParamExists('updateAddress', 'addressInput', addressInput)
+            assertParamExists('updateAddressByID', 'addressInput', addressInput)
             const localVarPath = `/addresses/{addressId}`
                 .replace(`{${"addressId"}}`, encodeURIComponent(String(addressId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -584,11 +633,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateIndividual: async (id: string, individualInput: IndividualInput, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateIndividualByID: async (id: string, individualInput: IndividualInput, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateIndividual', 'id', id)
+            assertParamExists('updateIndividualByID', 'id', id)
             // verify required parameter 'individualInput' is not null or undefined
-            assertParamExists('updateIndividual', 'individualInput', individualInput)
+            assertParamExists('updateIndividualByID', 'individualInput', individualInput)
             const localVarPath = `/individuals/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -649,10 +698,23 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options);
+        async deleteAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.deleteAddress']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.deleteAddressByID']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete an individual by ID
+         * @param {string} id ID of the individual
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteIndividualByID(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteIndividualByID(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.deleteIndividualByID']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -665,10 +727,22 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AddressOutput>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options);
+        async getAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AddressInput>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getAddress']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getAddressByID']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Retrieves userinfo in JSON format
+         * @summary Retrieve Userinfo
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getCurrentUserInfo(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetCurrentUserInfo200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getCurrentUserInfo(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getCurrentUserInfo']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -678,10 +752,10 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getIndividual(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Individual>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getIndividual(id, options);
+        async getIndividualByID(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Individual>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getIndividualByID(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getIndividual']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.getIndividualByID']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -698,19 +772,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Delete an individual by ID
-         * @param {string} id ID of the individual
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async individualsIdDelete(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.individualsIdDelete(id, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.individualsIdDelete']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @summary Update an existing address for an individual by ID and address ID
          * @param {string} addressId ID of the address
          * @param {string} beneficiaryToken Beneficiary token for authorization
@@ -720,10 +781,10 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateAddress(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options);
+        async updateAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateAddressByID(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateAddress']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateAddressByID']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -734,10 +795,10 @@ export const DefaultApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateIndividual(id: string, individualInput: IndividualInput, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateIndividual(id, individualInput, options);
+        async updateIndividualByID(id: string, individualInput: IndividualInput, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateIndividualByID(id, individualInput, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateIndividual']?.[localVarOperationServerIndex]?.url;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.updateIndividualByID']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -770,8 +831,18 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(axios, basePath));
+        deleteAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete an individual by ID
+         * @param {string} id ID of the individual
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteIndividualByID(id: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteIndividualByID(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -783,8 +854,17 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: any): AxiosPromise<AddressOutput> {
-            return localVarFp.getAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(axios, basePath));
+        getAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: any): AxiosPromise<AddressInput> {
+            return localVarFp.getAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Retrieves userinfo in JSON format
+         * @summary Retrieve Userinfo
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getCurrentUserInfo(options?: any): AxiosPromise<GetCurrentUserInfo200Response> {
+            return localVarFp.getCurrentUserInfo(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -793,8 +873,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getIndividual(id: string, options?: any): AxiosPromise<Individual> {
-            return localVarFp.getIndividual(id, options).then((request) => request(axios, basePath));
+        getIndividualByID(id: string, options?: any): AxiosPromise<Individual> {
+            return localVarFp.getIndividualByID(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -807,16 +887,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @summary Delete an individual by ID
-         * @param {string} id ID of the individual
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        individualsIdDelete(id: string, options?: any): AxiosPromise<void> {
-            return localVarFp.individualsIdDelete(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @summary Update an existing address for an individual by ID and address ID
          * @param {string} addressId ID of the address
          * @param {string} beneficiaryToken Beneficiary token for authorization
@@ -826,8 +896,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: any): AxiosPromise<void> {
-            return localVarFp.updateAddress(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options).then((request) => request(axios, basePath));
+        updateAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: any): AxiosPromise<void> {
+            return localVarFp.updateAddressByID(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -837,8 +907,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateIndividual(id: string, individualInput: IndividualInput, options?: any): AxiosPromise<void> {
-            return localVarFp.updateIndividual(id, individualInput, options).then((request) => request(axios, basePath));
+        updateIndividualByID(id: string, individualInput: IndividualInput, options?: any): AxiosPromise<void> {
+            return localVarFp.updateIndividualByID(id, individualInput, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -873,8 +943,20 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public deleteAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).deleteAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(this.axios, this.basePath));
+    public deleteAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).deleteAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete an individual by ID
+     * @param {string} id ID of the individual
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public deleteIndividualByID(id: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).deleteIndividualByID(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -888,8 +970,19 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public getAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).getAddress(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(this.axios, this.basePath));
+    public getAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, individualId?: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getAddressByID(addressId, beneficiaryToken, beneficiaryId, individualId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Retrieves userinfo in JSON format
+     * @summary Retrieve Userinfo
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public getCurrentUserInfo(options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getCurrentUserInfo(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -900,8 +993,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public getIndividual(id: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).getIndividual(id, options).then((request) => request(this.axios, this.basePath));
+    public getIndividualByID(id: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).getIndividualByID(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -917,18 +1010,6 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @summary Delete an individual by ID
-     * @param {string} id ID of the individual
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public individualsIdDelete(id: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).individualsIdDelete(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
      * @summary Update an existing address for an individual by ID and address ID
      * @param {string} addressId ID of the address
      * @param {string} beneficiaryToken Beneficiary token for authorization
@@ -939,8 +1020,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public updateAddress(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).updateAddress(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options).then((request) => request(this.axios, this.basePath));
+    public updateAddressByID(addressId: string, beneficiaryToken: string, beneficiaryId: string, addressInput: AddressInput, individualId?: string, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).updateAddressByID(addressId, beneficiaryToken, beneficiaryId, addressInput, individualId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -952,8 +1033,8 @@ export class DefaultApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public updateIndividual(id: string, individualInput: IndividualInput, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).updateIndividual(id, individualInput, options).then((request) => request(this.axios, this.basePath));
+    public updateIndividualByID(id: string, individualInput: IndividualInput, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).updateIndividualByID(id, individualInput, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

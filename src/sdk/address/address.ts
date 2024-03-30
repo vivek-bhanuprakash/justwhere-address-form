@@ -17,7 +17,7 @@ const GetAddressUsingPrimaryToken = async (
 
     const api = new APIIndividuals(config);
 
-    const response = await api.getAddress(addressID, primaryToken, serviceProviderID, individualID);
+    const response = await api.getAddressByID(addressID, primaryToken, serviceProviderID, individualID);
     const address = response.data || null
     return convertToAddress(address);
 }
@@ -37,7 +37,7 @@ const GetAddressUsingSecondaryToken = async (
 
     const api = new APIIndividuals(config);
 
-    const response = await api.getAddress(addressID, secondaryToken, beneficiaryID, individualID);
+    const response = await api.getAddressByID(addressID, secondaryToken, beneficiaryID, individualID);
     const address = response.data || null
     return convertToAddress(address);
 }

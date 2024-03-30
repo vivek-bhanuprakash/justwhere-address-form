@@ -9,7 +9,7 @@ enum UserType {
     BNEmployee
 }
 
-const AddressPage: React.FC = () => {
+const BenPage: React.FC = () => {
     const [cookies] = useCookies();
 
     const [userEmail, setUserEmail] = useState<string>("");
@@ -123,11 +123,15 @@ const AddressPage: React.FC = () => {
             if (cookies["X-USER-TYPE"] === "SERVICE_PROVIDER") {
                 setUserType(UserType.SPEmployee)
                 setUserTypeName("Service Provider Employee")
+                setSecondaryToken("")
+                setBeneficiaryID("")
                 return
             }
             if (cookies["X-USER-TYPE"] === "BENEFICIARY") {
                 setUserType(UserType.BNEmployee)
                 setUserTypeName("Beneficiary Employee")
+                setPrimaryToken("")
+                setServiceProviderID("")
                 return
             }
         }
@@ -135,28 +139,46 @@ const AddressPage: React.FC = () => {
 
     return (
         <>
-            <div className="max-w-screen-xl mx-auto px-4">
-                <header className="bg-blue-500 py-4 mb-6 rounded-lg">
+            <div className="max-h-screen mt-4">
+                <header className="bg-green-900 py-4 mb-6">
                     <div className="text-white text-center">
-                        <div className="text-xl font-bold mb-2">ACME Banking Services</div>
-                        <div className="text-sm font-bold mb-2">755 D'Amore Well, West Kiana, Pennsylvania, 37570-3998, 770-381-4152</div>
+                        <div className="text-xl font-bold mb-2">Rapid Delivery Services</div>
+                        <div className="text-sm font-bold mb-2">274 Schultz Gardens, New Greggstad, Virginia - 90292, +1-480-644-6193</div>
                     </div>
                 </header>
                 <main className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="bg-gray-100">
-                        <h2 className="text-lg font-semibold mb-4 uppercase">Address</h2>
-                        <JWAddress
-                            hostport={jwHost}
-                            individualID={individualID}
-                            addressID={addressID}
-                            serviceProviderID={serviceProviderID}
-                            primaryToken={primaryToken}
-                            beneficiaryID={beneficiaryID}
-                            secondaryToken={secondaryToken}
-                            onNewPrimaryToken={onNewPrimaryToken}
-                            onNewSecondaryToken={onNewSecondaryToken}
-                            onError={onError}
-                        />
+                    <div>
+                        <div className="bg-gray-100">
+                            <h2 className="text-lg font-semibold mb-4 uppercase">Address</h2>
+                            <JWAddress
+                                hostport={jwHost}
+                                individualID={individualID}
+                                addressID={addressID}
+                                serviceProviderID={serviceProviderID}
+                                primaryToken={primaryToken}
+                                beneficiaryID={beneficiaryID}
+                                secondaryToken={secondaryToken}
+                                onNewPrimaryToken={onNewPrimaryToken}
+                                onNewSecondaryToken={onNewSecondaryToken}
+                                onError={onError}
+                            />
+                        </div>
+                        {userType == UserType.Customer ? (
+                            <div className="bg-gray-100">
+                                <h2 className="text-lg font-semibold mb-4 uppercase">Output</h2>
+                                <div className="bg-gray-200 p-4">
+                                    <div className="mb-0">
+                                        <label htmlFor="secondaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
+                                        <textarea
+                                            id="secondaryToken" className="text-sm font-light w-full px-3 py-2 border rounded-md" rows={4}
+                                            value={secondaryToken}
+                                            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setSecondaryToken(event.target.value)}></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div></div>
+                        )}
                     </div>
 
                     <div className="grid gap-4">
@@ -179,49 +201,57 @@ const AddressPage: React.FC = () => {
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setJWHost(event.target.value)}></input>
                             </div>
                         </div>
+                        {userType == UserType.Customer ? (
+                            <div className="bg-gray-200 p-4">
+                                <div className="mb-4">
+                                    <label className="text-md uppercase font-semibold block mb-1">Customer</label>
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="individualID" className="text-xs uppercase font-semibold block mb-1">ID</label>
+                                    <input
+                                        type="text" id="firstName" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
+                                        value={individualID}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}></input>
+                                </div>
+                                <div className="mb-0">
+                                    <label htmlFor="addressID" className="text-xs uppercase font-semibold block mb-1">Address</label>
+                                    <input
+                                        type="text" id="addressID" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
+                                        value={addressID}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
+                                    ></input>
+                                </div>
+                            </div>
+                        ) : (
+                            <></>
+                        )}
 
-                        <div className="bg-gray-200 p-4">
-                            <div className="mb-4">
-                                <label className="text-md uppercase font-semibold block mb-1">Customer</label>
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="individualID" className="text-xs uppercase font-semibold block mb-1">ID</label>
-                                <input
-                                    type="text" id="firstName" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
-                                    value={individualID}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}></input>
-                            </div>
-                            <div className="mb-0">
-                                <label htmlFor="addressID" className="text-xs uppercase font-semibold block mb-1">Address</label>
-                                <input
-                                    type="text" id="addressID" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
-                                    value={addressID}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
-                                ></input>
-                            </div>
-                        </div>
+                        {userType == UserType.Customer ? (
+                            <div className="bg-gray-200 p-4">
+                                <div className="mb-4">
+                                    <label className="text-md uppercase font-semibold block mb-1">Service Provider</label>
+                                </div>
+                                <div className="mb-4">
+                                    <label htmlFor="serviceProviderID" className="text-xs uppercase font-semibold block mb-1">ID</label>
+                                    <input
+                                        type="text" id="serviceProviderID" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
+                                        value={serviceProviderID}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}></input>
+                                </div>
 
-                        <div className="bg-gray-200 p-4">
-                            <div className="mb-4">
-                                <label className="text-md uppercase font-semibold block mb-1">Service Provider</label>
+                                <div className="mb-0">
+                                    <label htmlFor="primaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
+                                    <textarea
+                                        id="primaryToken" className="text-sm font-light w-full px-3 py-2 border rounded-md" rows={4}
+                                        value={primaryToken}
+                                        onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}></textarea>
+                                </div>
                             </div>
-                            <div className="mb-4">
-                                <label htmlFor="serviceProviderID" className="text-xs uppercase font-semibold block mb-1">ID</label>
-                                <input
-                                    type="text" id="serviceProviderID" className="text-sm font-normal w-full px-3 py-2 border rounded-md"
-                                    value={serviceProviderID}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}></input>
-                            </div>
+                        ) : (
+                            <></>
+                        )
 
-                            <div className="mb-0">
-                                <label htmlFor="primaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
-                                <textarea
-                                    id="primaryToken" className="text-sm font-light w-full px-3 py-2 border rounded-md" rows={4}
-                                    value={primaryToken}
-                                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}></textarea>
-                            </div>
-                        </div>
-
+                        }
                         <div className="bg-gray-200 p-4">
                             <div className="mb-4">
                                 <label className="text-md uppercase font-semibold block mb-1">Beneficiary</label>
@@ -233,14 +263,19 @@ const AddressPage: React.FC = () => {
                                     value={beneficiaryID}
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)}></input>
                             </div>
+                            {userType == UserType.BNEmployee ? (
+                                <div className="mb-0">
+                                    <label htmlFor="secondaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
+                                    <textarea
+                                        id="secondaryToken" className="text-sm font-light w-full px-3 py-2 border rounded-md" rows={4}
+                                        value={secondaryToken}
+                                        onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setSecondaryToken(event.target.value)}></textarea>
+                                </div>
+                            ) : (
+                                <></>
+                            )
 
-                            <div className="mb-0">
-                                <label htmlFor="secondaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
-                                <textarea
-                                    id="secondaryToken" className="text-sm font-light w-full px-3 py-2 border rounded-md" rows={4}
-                                    value={secondaryToken}
-                                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setSecondaryToken(event.target.value)}></textarea>
-                            </div>
+                            }
                         </div>
                     </div>
                 </main>
@@ -249,4 +284,4 @@ const AddressPage: React.FC = () => {
     );
 }
 
-export default AddressPage;
+export default BenPage;
