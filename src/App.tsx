@@ -9,7 +9,7 @@ import { CookiesProvider, withCookies } from "react-cookie";
 function App() {
   return (
     <CookiesProvider>
-      <div className="max-w-screen-xl mx-auto">
+      <div className="max-w-screen-xl mx-auto mb-10">
         <Router>
           <div>
             <nav className="bg-gray-800 p-4">

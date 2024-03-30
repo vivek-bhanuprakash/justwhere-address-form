@@ -147,11 +147,11 @@ const BenPage: React.FC = () => {
                     </div>
                 </header>
                 <main className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <div className="bg-gray-100">
+                    <div className="grid gap-4">
+                        <div className="bg-gray-100 p-4">
                             <h2 className="text-lg font-semibold mb-4 uppercase">Address</h2>
                             <JWAddress
-                                hostport={jwHost}
+                                hostPort={jwHost}
                                 individualID={individualID}
                                 addressID={addressID}
                                 serviceProviderID={serviceProviderID}
@@ -164,9 +164,9 @@ const BenPage: React.FC = () => {
                             />
                         </div>
                         {userType == UserType.Customer ? (
-                            <div className="bg-gray-100">
-                                <h2 className="text-lg font-semibold mb-4 uppercase">Output</h2>
+                            <div className="">
                                 <div className="bg-gray-200 p-4">
+                                    <h2 className="text-lg font-semibold mb-4 uppercase">Output</h2>
                                     <div className="mb-0">
                                         <label htmlFor="secondaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
                                         <textarea
@@ -201,7 +201,7 @@ const BenPage: React.FC = () => {
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setJWHost(event.target.value)}></input>
                             </div>
                         </div>
-                        {userType == UserType.Customer ? (
+
                             <div className="bg-gray-200 p-4">
                                 <div className="mb-4">
                                     <label className="text-md uppercase font-semibold block mb-1">Customer</label>
@@ -222,9 +222,7 @@ const BenPage: React.FC = () => {
                                     ></input>
                                 </div>
                             </div>
-                        ) : (
-                            <></>
-                        )}
+                        
 
                         {userType == UserType.Customer ? (
                             <div className="bg-gray-200 p-4">

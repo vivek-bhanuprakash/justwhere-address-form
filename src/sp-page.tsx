@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import JWAddress, { JWErrorAuthenticationRequired, JWErrorBadRequest } from './components/jw-address-form';
+import JWAddress, { EmbedMode, JWErrorBadRequest } from './components/jw-address';
 import { useCookies } from 'react-cookie';
 
 enum UserType {
@@ -27,17 +27,17 @@ const SPPage: React.FC = () => {
     const [beneficiaryID, setBeneficiaryID] = useState<string>("");
     const [secondaryToken, setSecondaryToken] = useState<string>("");
 
-    const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
-        console.error(error);
-        if (error instanceof JWErrorAuthenticationRequired) {
-            // Unauthorized
-            window.open(`${jwHost}/api/login`, "_blank");
-        } else if (error instanceof JWErrorBadRequest) {
+    // const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
+    //     console.error(error);
+    //     if (error instanceof JWErrorAuthenticationRequired) {
+    //         // Unauthorized
+    //         window.open(`${jwHost}/api/login`, "_blank");
+    //     } else if (error instanceof JWErrorBadRequest) {
 
-        } else {
-            // Anything else
-        }
-    }
+    //     } else {
+    //         // Anything else
+    //     }
+    // }
 
     const onNewPrimaryToken = (token: string) => {
         setPrimaryToken(token);
@@ -139,7 +139,7 @@ const SPPage: React.FC = () => {
 
     return (
         <>
-            <div className="max-h-screen mt-4">
+            <div className="mt-4">
                 <header className="bg-blue-500 py-4 mb-6">
                     <div className="text-white text-center">
                         <div className="text-xl font-bold mb-2">ACME Banking Services</div>
@@ -147,11 +147,12 @@ const SPPage: React.FC = () => {
                     </div>
                 </header>
                 <main className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <div className="bg-gray-100">
+                    <div className="grid gap-4">
+                        <div className="bg-gray-100 p-4">
                             <h2 className="text-lg font-semibold mb-4 uppercase">Address</h2>
                             <JWAddress
-                                hostport={jwHost}
+                                embedAs={EmbedMode.SERVICE_PROVIDER}
+                                hostPort={jwHost}
                                 individualID={individualID}
                                 addressID={addressID}
                                 serviceProviderID={serviceProviderID}
@@ -160,13 +161,12 @@ const SPPage: React.FC = () => {
                                 secondaryToken={secondaryToken}
                                 onNewPrimaryToken={onNewPrimaryToken}
                                 onNewSecondaryToken={onNewSecondaryToken}
-                                onError={onError}
                             />
                         </div>
                         {userType == UserType.Customer ? (
-                            <div className="bg-gray-100">
-                                <h2 className="text-lg font-semibold mb-4 uppercase">Output</h2>
+                            <div className="">
                                 <div className="bg-gray-200 p-4">
+                                    <h2 className="text-lg font-semibold mb-4 uppercase">Output</h2>
                                     <div className="mb-0">
                                         <label htmlFor="primaryToken" className="text-xs uppercase font-semibold block mb-1">Address Key</label>
                                         <textarea

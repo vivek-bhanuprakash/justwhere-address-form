@@ -2,6 +2,7 @@ import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
 import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
 import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "./../apis/tokens";
+import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
 const genereratePrimaryToken = async (hostport: string, individualID: string, addressID: string, serviceProviderID: string): Promise<string> => {
   const input: PrimaryTokenInput = {
@@ -160,20 +161,20 @@ export class JWErrorBadRequest extends JWError {
 type ErrorType = JWErrorAuthenticationRequired | JWErrorForbidden | JWErrorBadRequest | JWError;
 
 export interface AddressProps {
-  hostport: string;
+  hostPort: string;
   individualID: string;
   addressID?: string;
   serviceProviderID?: string;
   primaryToken?: string;
   beneficiaryID?: string;
   secondaryToken?: string;
-  onError: (error: ErrorType) => void;
-  onNewPrimaryToken: (token: string) => void;
-  onNewSecondaryToken: (token: string) => void;
+  onError?: OnErrorFcn;
+  onNewPrimaryToken?: OnNewPrimaryToken;
+  onNewSecondaryToken?: OnNewSecondaryToken;
 }
 
-const JWAddress: React.FC<AddressProps> = ({
-  hostport,
+const JWAddressForm: React.FC<AddressProps> = ({
+  hostPort: hostport,
   individualID,
   addressID,
   serviceProviderID,
@@ -242,6 +243,12 @@ const JWAddress: React.FC<AddressProps> = ({
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
+
+        if(onError === undefined || typeof onError !== "function") {
+          console.warn("JustWhere: onError function is undefined or not a function");
+          return;
+        }
+
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
           onError(new JWErrorAuthenticationRequired("Authentication required"));
@@ -264,6 +271,12 @@ const JWAddress: React.FC<AddressProps> = ({
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
+
+        if(onError === undefined || typeof onError !== "function") {
+          console.warn("JustWhere: onError function is undefined or not a function");
+          return;
+        }
+
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
           onError(new JWErrorAuthenticationRequired("Authentication required"));
@@ -282,10 +295,21 @@ const JWAddress: React.FC<AddressProps> = ({
 
   const onGenerateSecondaryToken = async () => {
     try {
+      if(onNewSecondaryToken === undefined || typeof onNewSecondaryToken !== "function") {
+        console.warn("JustWhere: onNewSecondaryToken function is undefined or not a function. no token will be generated.");
+        return;
+      }
+
       const token = await genererateSecondaryToken(hostport, serviceProviderID || "", beneficiaryID || "", primaryToken || "");
       setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", token);
     } catch (e) {
       if (e instanceof AxiosError) {
+
+        if(onError === undefined || typeof onError !== "function") {
+          console.warn("JustWhere: onError function is undefined or not a function");
+          return;
+        }
+
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
           onError(new JWErrorAuthenticationRequired("Authentication required"));
@@ -304,10 +328,21 @@ const JWAddress: React.FC<AddressProps> = ({
 
   const onGeneratePrimaryToken = async () => {
     try {
+      if(onNewPrimaryToken === undefined || typeof onNewPrimaryToken !== "function") {
+        console.warn("JustWhere: onNewPrimaryToken function is undefined or not a function. no token will be generated.");
+        return;
+      }
+
       const token = await genereratePrimaryToken(hostport, individualID, addressID || "", serviceProviderID || "");
       setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", token);
     } catch (e) {
       if (e instanceof AxiosError) {
+
+        if(onError === undefined || typeof onError !== "function") {
+          console.warn("JustWhere: onError function is undefined or not a function");
+          return;
+        }
+
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
           onError(new JWErrorAuthenticationRequired("Authentication required"));
@@ -338,15 +373,21 @@ const JWAddress: React.FC<AddressProps> = ({
       email: "",
     };
     setAddress(empty);
-  }
+  };
 
   const onViewSelfAddress = async () => {
     try {
-      clearAddress()
+      clearAddress();
       const address = await getSelfAddress(hostport, addressID || "", individualID);
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
+
+        if(onError === undefined || typeof onError !== "function") {
+          console.warn("JustWhere: onError function is undefined or not a function");
+          return;
+        }
+
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
           onError(new JWErrorAuthenticationRequired("Authentication required"));
@@ -363,9 +404,9 @@ const JWAddress: React.FC<AddressProps> = ({
     }
   };
 
-  const onEditAddress = () => { };
+  const onEditAddress = () => {};
 
-  const onListAddress = () => { };
+  const onListAddress = () => {};
 
   // determine type of user based on
   // current logged in user's individualID
@@ -437,10 +478,10 @@ const JWAddress: React.FC<AddressProps> = ({
       // }
 
       try {
-        clearAddress()
+        clearAddress();
         const address = await getSelfAddress(hostport, addressID, individualID);
         setAddressValidity(AddressValidity.Self);
-        await onViewSelfAddress()
+        await onViewSelfAddress();
       } catch (e) {
         if (onError === undefined || typeof onError !== "function") {
           console.warn("JWAddress: no onError handler provided, or onError is not a function");
@@ -481,7 +522,6 @@ const JWAddress: React.FC<AddressProps> = ({
 
     // setShowEditAddress(true);
     setShowEditAddress(false);
-
   }, [userType, addressValidity]);
 
   // visibility of list addresses btn
@@ -512,46 +552,46 @@ const JWAddress: React.FC<AddressProps> = ({
 
   // visibility of generate secondary token btn
   useEffect(() => {
-    console.log("abc: ", showGenPrimaryToken, userType, serviceProviderID, primaryToken, beneficiaryID)
+    console.log("abc: ", showGenPrimaryToken, userType, serviceProviderID, primaryToken, beneficiaryID);
     if (showGenSecondaryToken !== false) setShowGenSecondaryToken(false);
 
     // individualID is not current user
     if (userType !== UserType.Self) return;
 
-    console.log("2")
+    console.log("2");
     // serviceProviderID sanity checks
     if (serviceProviderID === undefined) return;
 
-    console.log("3")
+    console.log("3");
     if (typeof serviceProviderID !== "string") return;
 
-    console.log("4")
+    console.log("4");
     // id must be a UUID
     // console.log(JW_ID_PATTERN.test(serviceProviderID))
     // if (!JW_ID_PATTERN.test(serviceProviderID)) return;
 
-    console.log("5")
+    console.log("5");
     // primaryToken sanity checks
     if (primaryToken === undefined) return;
 
-    console.log("6")
+    console.log("6");
     if (typeof primaryToken !== "string") return;
 
-    console.log("7")
+    console.log("7");
     if (primaryToken.trim().length === 0) return;
 
-    console.log("8")
+    console.log("8");
     // beneficiaryID sanity checks
     if (beneficiaryID === undefined) return;
 
-    console.log("9")
+    console.log("9");
     if (typeof beneficiaryID !== "string") return;
 
-    console.log("10")
+    console.log("10");
     // id must be a UUID
     // if (!JW_ID_PATTERN.test(beneficiaryID)) return;
 
-    console.log(showGenPrimaryToken)
+    console.log(showGenPrimaryToken);
     setShowGenSecondaryToken(true);
   }, [userType, serviceProviderID, primaryToken, beneficiaryID]);
 
@@ -740,74 +780,19 @@ const JWAddress: React.FC<AddressProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="grid grid-cols-4 justify-self-end">
-            {userType == UserType.Self ? (
-              <>
-                {showViewAddress || showEditAddress || showListAddresses ? (
-                  <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Address</p>
-                ) : (
-                  <div></div>
-                )}
-
-                {showViewAddress ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
-                    onClick={onViewSelfAddress}
-                  >
-                    View
-                  </button>
-                ) : (
-                  <div></div>
-                )}
-
-                {showEditAddress ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
-                    onClick={onEditAddress}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <div></div>
-                )}
-
-                {showListAddresses ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
-                    onClick={onListAddress}
-                  >
-                    List
-                  </button>
-                ) : (
-                  <div></div>
-                )}
-              </>
-            ) : (
-              <>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-              </>
-            )}
-          </div>
-          <div className="grid grid-cols-3 justify-self-end">
+          <div className="flex flex-cols gap-3">
             {userType == UserType.Self ? (
               <>
                 {showGenPrimaryToken || showGenSecondaryToken ? (
                   <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Get Handle</p>
                 ) : (
-                  <div></div>
+                  <></>
                 )}
 
                 {showGenPrimaryToken ? (
                   <button
                     type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
                     onClick={onGeneratePrimaryToken}
                   >
                     Service
@@ -819,7 +804,7 @@ const JWAddress: React.FC<AddressProps> = ({
                 {showGenSecondaryToken ? (
                   <button
                     type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
                     onClick={onGenerateSecondaryToken}
                   >
                     Beneficiary
@@ -831,7 +816,7 @@ const JWAddress: React.FC<AddressProps> = ({
             ) : userType == UserType.Other ? (
               <>
                 {showViewAddressPrimaryToken || showViewAddressSecondaryToken ? (
-                  <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Address</p>
+                  <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">View Address</p>
                 ) : (
                   <div></div>
                 )}
@@ -839,10 +824,10 @@ const JWAddress: React.FC<AddressProps> = ({
                 {showViewAddressPrimaryToken ? (
                   <button
                     type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
                     onClick={onViewAddressWithPrimaryToken}
                   >
-                    View
+                    Service
                   </button>
                 ) : (
                   <></>
@@ -851,10 +836,10 @@ const JWAddress: React.FC<AddressProps> = ({
                 {showViewAddressSecondaryToken ? (
                   <button
                     type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
                     onClick={onViewAddressWithSecondaryToken}
                   >
-                    View
+                    Beneficiary
                   </button>
                 ) : (
                   <></>
@@ -864,7 +849,7 @@ const JWAddress: React.FC<AddressProps> = ({
               <>
                 <button
                   type="button"
-                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
                   onClick={onLogin}
                 >
                   Login
@@ -872,10 +857,9 @@ const JWAddress: React.FC<AddressProps> = ({
               </>
             )}
           </div>
-        </div>
       </div>
     </>
   );
 };
 
-export default JWAddress;
+export default JWAddressForm;

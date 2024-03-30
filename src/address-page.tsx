@@ -146,7 +146,7 @@ const AddressPage: React.FC = () => {
                     <div className="bg-gray-100">
                         <h2 className="text-lg font-semibold mb-4 uppercase">Address</h2>
                         <JWAddress
-                            hostport={jwHost}
+                            hostPort={jwHost}
                             individualID={individualID}
                             addressID={addressID}
                             serviceProviderID={serviceProviderID}
