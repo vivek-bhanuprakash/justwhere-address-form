@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
-import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
+import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals, GetCurrentUserInfo200Response } from "./../apis/individuals";
 import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "./../apis/tokens";
 import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
@@ -101,7 +101,7 @@ enum AddressValidity {
   Other,
 }
 
-const getUserType = async (hostport: string, individualID: string): Promise<UserType> => {
+const getCurrentUserInfo = async (hostport: string): Promise<GetCurrentUserInfo200Response> => {
   const config: APIIndividualsConfig = new APIIndividualsConfig({
     basePath: `${hostport}/api`,
     baseOptions: {
@@ -112,7 +112,10 @@ const getUserType = async (hostport: string, individualID: string): Promise<User
   const api = new APIIndividuals(config);
 
   const response = await api.getCurrentUserInfo();
-  const userInfo = response.data || null;
+  return response.data || null;
+};
+
+const getUserType = (userInfo: GetCurrentUserInfo200Response, individualID: string): UserType => {
   if (userInfo !== null) {
     if (userInfo.IndividualID === undefined || userInfo.IndividualID.trim().length === 0) return UserType.Unknown;
 
@@ -187,6 +190,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
 }) => {
   const [address, setAddress] = useState<AddressInput>();
   const [userType, setUserType] = useState<UserType>(UserType.Unknown);
+  const [currentUserID, setCurrentUserID] = useState<string>("");
   const [addressValidity, setAddressValidity] = useState<AddressValidity>(AddressValidity.Unknown);
 
   const [showViewAddress, setShowViewAddress] = useState<boolean>(false);
@@ -209,7 +213,8 @@ const JWAddressForm: React.FC<AddressProps> = ({
       clearTimeout(watchDogTimerID);
     }
 
-    const userType: UserType = await getUserType(hostport, individualID);
+    const userInfo = await getCurrentUserInfo(hostport);
+    const userType: UserType = getUserType(userInfo, individualID);
     setUserType(userType);
     if (userType === UserType.Unknown) {
       watchDogRetries++;
@@ -220,6 +225,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       }
     } else {
       watchDogRetries = 0;
+      setCurrentUserID(userInfo.UserID || "");
     }
   };
 
@@ -228,12 +234,16 @@ const JWAddressForm: React.FC<AddressProps> = ({
       clearTimeout(watchDogTimerID);
     }
 
-    const userType = await getUserType(hostport, individualID);
+    const userInfo = await getCurrentUserInfo(hostport);
+    const userType: UserType = getUserType(userInfo, individualID);
+
     setUserType(userType);
     if (userType === UserType.Unknown) {
       window.open(`${hostport}/api/login`, "_blank");
       watchDogRetries = 0;
       watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
+    } else {
+      setCurrentUserID(userInfo.UserID || "");
     }
   };
 
@@ -427,8 +437,12 @@ const JWAddressForm: React.FC<AddressProps> = ({
       if (individualID.trim().length === 0) return;
 
       try {
-        const userType: UserType = await getUserType(hostport, individualID);
+        const userInfo = await getCurrentUserInfo(hostport);
+        const userType: UserType = getUserType(userInfo, individualID);
         setUserType(userType);
+        if (userType !== UserType.Unknown) {
+          setCurrentUserID(userInfo.UserID || "");
+        }
       } catch (e) {
         if (onError === undefined || typeof onError !== "function") {
           console.warn("JWAddress: no onError handler provided, or onError is not a function");
