@@ -686,7 +686,16 @@ const JWAddressForm: React.FC<AddressProps> = ({
         <div className="@container/address-header flex justify-start bg-gray-800 p-2">
           <img src={hostport + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
           <div className="flex-col justify-around self-center">
-            <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
+            {currentUserID !== "" ? (
+              <>
+                <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
+                <p className="ml-4 text-sm font-light text-gray-200">{currentUserID}</p>
+              </>
+            ) : (
+              <>
+                <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
+              </>
+            )}
           </div>
         </div>
 
