@@ -268,6 +268,16 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const onViewAddressWithPrimaryToken = async () => {
     try {
       const address = await getAddressUsingProviderToken(hostport, addressID || "", serviceProviderID || "", primaryToken || "");
+      
+      address.addressee = address.addressee === undefined ? "Hidden" : address.addressee.trim().length === 0 ? "Hidden" : address.addressee;
+      address.street = address.street === undefined ? "Hidden" : address.street.trim().length === 0 ? "Hidden" : address.street;
+      address.city = address.city === undefined ? "Hidden" : address.city.trim().length === 0 ? "Hidden" : address.city;
+      address.state = address.state === undefined ? "Hidden" : address.state.trim().length === 0 ? "Hidden" : address.state;
+      address.zipCode = address.zipCode === undefined ? "Hidden" : address.zipCode.trim().length === 0 ? "Hidden" : address.zipCode;
+      address.country = address.country === undefined ? "Hidden" : address.country.trim().length === 0 ? "Hidden" : address.country;
+      address.email = address.email === undefined ? "Hidden" : address.email.trim().length === 0 ? "Hidden" : address.email;
+      address.phone = address.phone === undefined ? "Hidden" : address.phone.trim().length === 0 ? "Hidden" : address.phone;
+
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
