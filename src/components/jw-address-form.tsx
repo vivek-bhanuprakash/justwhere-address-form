@@ -243,8 +243,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
-
-        if(onError === undefined || typeof onError !== "function") {
+        if (onError === undefined || typeof onError !== "function") {
           console.warn("JustWhere: onError function is undefined or not a function");
           return;
         }
@@ -268,7 +267,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const onViewAddressWithPrimaryToken = async () => {
     try {
       const address = await getAddressUsingProviderToken(hostport, addressID || "", serviceProviderID || "", primaryToken || "");
-      
+
       address.addressee = address.addressee === undefined ? "Hidden" : address.addressee.trim().length === 0 ? "Hidden" : address.addressee;
       address.street = address.street === undefined ? "Hidden" : address.street.trim().length === 0 ? "Hidden" : address.street;
       address.city = address.city === undefined ? "Hidden" : address.city.trim().length === 0 ? "Hidden" : address.city;
@@ -281,8 +280,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
-
-        if(onError === undefined || typeof onError !== "function") {
+        if (onError === undefined || typeof onError !== "function") {
           console.warn("JustWhere: onError function is undefined or not a function");
           return;
         }
@@ -305,7 +303,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
   const onGenerateSecondaryToken = async () => {
     try {
-      if(onNewSecondaryToken === undefined || typeof onNewSecondaryToken !== "function") {
+      if (onNewSecondaryToken === undefined || typeof onNewSecondaryToken !== "function") {
         console.warn("JustWhere: onNewSecondaryToken function is undefined or not a function. no token will be generated.");
         return;
       }
@@ -314,8 +312,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", token);
     } catch (e) {
       if (e instanceof AxiosError) {
-
-        if(onError === undefined || typeof onError !== "function") {
+        if (onError === undefined || typeof onError !== "function") {
           console.warn("JustWhere: onError function is undefined or not a function");
           return;
         }
@@ -338,7 +335,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
   const onGeneratePrimaryToken = async () => {
     try {
-      if(onNewPrimaryToken === undefined || typeof onNewPrimaryToken !== "function") {
+      if (onNewPrimaryToken === undefined || typeof onNewPrimaryToken !== "function") {
         console.warn("JustWhere: onNewPrimaryToken function is undefined or not a function. no token will be generated.");
         return;
       }
@@ -347,8 +344,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", token);
     } catch (e) {
       if (e instanceof AxiosError) {
-
-        if(onError === undefined || typeof onError !== "function") {
+        if (onError === undefined || typeof onError !== "function") {
           console.warn("JustWhere: onError function is undefined or not a function");
           return;
         }
@@ -392,8 +388,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
       setAddress(address);
     } catch (e) {
       if (e instanceof AxiosError) {
-
-        if(onError === undefined || typeof onError !== "function") {
+        if (onError === undefined || typeof onError !== "function") {
           console.warn("JustWhere: onError function is undefined or not a function");
           return;
         }
@@ -673,200 +668,191 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 items-center justify-start gap-4">
+      <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">
         <div>
-          <label htmlFor="address-label" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
-            Label
+          <label htmlFor="address-type" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
+            Type
           </label>
           <input
             type="text"
-            id="address-label"
-            className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            id="address-type"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             placeholder="No value here"
           />
         </div>
+
         <div>
-          <label htmlFor="address-addressee" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+          <label htmlFor="address-name" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
             Name
           </label>
           <input
             type="text"
-            id="address-addressee"
-            className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            placeholder="No value here"
+            id="address-name"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             value={address?.addressee}
           />
         </div>
+
         <div>
-          <label htmlFor="address-street1" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+          <label htmlFor="address-street1" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
             Street
           </label>
           <input
             type="text"
             id="address-street1"
-            className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            placeholder="No value here"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             value={address?.street}
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-city" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+            <label htmlFor="address-city" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
               City
             </label>
             <input
               type="text"
               id="address-city"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.city}
             />
           </div>
           <div>
-            <label htmlFor="address-state" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+            <label htmlFor="address-state" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
               State
             </label>
             <input
               type="text"
               id="address-state"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.state}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-zipcode" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
-              Zipcode
+            <label htmlFor="address-zipcode" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
+              Post Code
             </label>
             <input
               type="text"
               id="address-zipcode"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.zipCode}
             />
           </div>
           <div>
-            <label htmlFor="address-country" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+            <label htmlFor="address-country" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
               Country
             </label>
             <input
               type="text"
               id="address-country"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.country}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-phone" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+            <label htmlFor="address-phone" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
               Phone
             </label>
             <input
               type="tel"
               id="address-phone"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.phone}
             />
           </div>
           <div>
-            <label htmlFor="address-email" className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-700">
+            <label htmlFor="address-email" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
               Email
             </label>
             <input
               type="email"
               id="address-email"
-              className="block w-full rounded-sm border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="No value here"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.email}
             />
           </div>
         </div>
 
-          <div className="flex flex-cols gap-3">
-            {userType == UserType.Self ? (
-              <>
-                {showGenPrimaryToken || showGenSecondaryToken ? (
-                  <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Get Handle</p>
-                ) : (
-                  <></>
-                )}
+        <div className="flex-cols flex gap-3">
+          {userType == UserType.Self ? (
+            <>
+              {showGenPrimaryToken || showGenSecondaryToken ? <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Get Handle</p> : <></>}
 
-                {showGenPrimaryToken ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
-                    onClick={onGeneratePrimaryToken}
-                  >
-                    Service
-                  </button>
-                ) : (
-                  <></>
-                )}
-
-                {showGenSecondaryToken ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
-                    onClick={onGenerateSecondaryToken}
-                  >
-                    Beneficiary
-                  </button>
-                ) : (
-                  <></>
-                )}
-              </>
-            ) : userType == UserType.Other ? (
-              <>
-                {showViewAddressPrimaryToken || showViewAddressSecondaryToken ? (
-                  <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">View Address</p>
-                ) : (
-                  <div></div>
-                )}
-
-                {showViewAddressPrimaryToken ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:bg-gray-100 focus:z-10 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
-                    onClick={onViewAddressWithPrimaryToken}
-                  >
-                    Service
-                  </button>
-                ) : (
-                  <></>
-                )}
-
-                {showViewAddressSecondaryToken ? (
-                  <button
-                    type="button"
-                    className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
-                    onClick={onViewAddressWithSecondaryToken}
-                  >
-                    Beneficiary
-                  </button>
-                ) : (
-                  <></>
-                )}
-              </>
-            ) : (
-              <>
+              {showGenPrimaryToken ? (
                 <button
                   type="button"
-                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:text-gray-700 focus:bg-gray-100 focus:ring-2 focus:ring-gray-700"
-                  onClick={onLogin}
+                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  onClick={onGeneratePrimaryToken}
                 >
-                  Login
+                  Service
                 </button>
-              </>
-            )}
-          </div>
+              ) : (
+                <></>
+              )}
+
+              {showGenSecondaryToken ? (
+                <button
+                  type="button"
+                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  onClick={onGenerateSecondaryToken}
+                >
+                  Beneficiary
+                </button>
+              ) : (
+                <></>
+              )}
+            </>
+          ) : userType == UserType.Other ? (
+            <>
+              {showViewAddressPrimaryToken || showViewAddressSecondaryToken ? (
+                <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">View Address</p>
+              ) : (
+                <div></div>
+              )}
+
+              {showViewAddressPrimaryToken ? (
+                <button
+                  type="button"
+                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  onClick={onViewAddressWithPrimaryToken}
+                >
+                  Service
+                </button>
+              ) : (
+                <></>
+              )}
+
+              {showViewAddressSecondaryToken ? (
+                <button
+                  type="button"
+                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  onClick={onViewAddressWithSecondaryToken}
+                >
+                  Beneficiary
+                </button>
+              ) : (
+                <></>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                onClick={onLogin}
+              >
+                Login
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </>
   );
