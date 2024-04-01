@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import JWAddress, { JWErrorAuthenticationRequired, JWErrorBadRequest } from "./components/jw-address-form";
+import JWAddress, { EmbedMode } from "./components/jw-address";
+import { JWErrorAuthenticationRequired, JWErrorBadRequest } from "./components/jw-address-form";
 
 enum UserType {
   Unknown,
@@ -146,8 +147,9 @@ const BenPage: React.FC = () => {
         </header>
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="grid gap-4">
-            <div className="bg-gray-100 p-4">
+            <div className="bg-gray-100 p-2">
               <JWAddress
+                embedAs={EmbedMode.SERVICE_PROVIDER}
                 hostPort={jwHost}
                 individualID={individualID}
                 addressID={addressID}
@@ -157,7 +159,6 @@ const BenPage: React.FC = () => {
                 secondaryToken={secondaryToken}
                 onNewPrimaryToken={onNewPrimaryToken}
                 onNewSecondaryToken={onNewSecondaryToken}
-                onError={onError}
               />
             </div>
             {userType == UserType.Customer ? (

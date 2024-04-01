@@ -44,7 +44,7 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
   const api = new APIIndividuals(config);
 
   const loginWatchDog = async () => {
-    console.log("loginWatchDog #", watchDogRetries + 1);
+    console.info("JWLogin: WatchDog retry #", watchDogRetries + 1);
     if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
       clearTimeout(watchDogTimerID);
     }
@@ -52,7 +52,9 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
     const response = await api.getCurrentUserInfo();
     const userInfo = response.data || null;
     if (userInfo !== null) {
-      return onLoginComplete(userInfo.UserID || "", userInfo.IndividualID || "");
+      if (typeof userInfo.IndividualID === "string" && userInfo.IndividualID.length > 0) {
+        return onLoginComplete(userInfo.UserID || "", userInfo.IndividualID || "");
+      }
     }
 
     watchDogRetries++;
@@ -79,11 +81,12 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
     let checkInProgress: boolean = false;
     if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
       checkInProgress = true;
+      console.info("JWLogin: Login was in progress.  It will be interrupted and retried.");
       clearTimeout(watchDogTimerID);
     }
 
-    WATCHDOG_MAX_RETRIES = retries || LOGIN_MAX_RETRIES;
-    WATCHDOG_INTERVAL = interval || LOGIN_CHECK_INTERVAL; // 2 seconds
+    console.info("JWLogin: WatchDog retries:", WATCHDOG_MAX_RETRIES, ", interval:", WATCHDOG_INTERVAL);
+    console.info("JWLogin: Host previous:", prevHostPort, ", current:", hostPort);
 
     if (checkInProgress) {
       if (prevHostPort !== hostPort) {
@@ -93,46 +96,53 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
         loginWatchDog();
       }
     }
-  }, [hostPort, retries, interval]);
+  }, [hostPort]);
 
   return (
     <>
-      <div className="m-5 grid gap-3">
-        <div className="flex flex-row bg-gray-800 p-5">
-          <img src={hostPort + "/justwhere.svg"} alt="JustWhere" className="h-8 w-8" />
-          <p className="ml-4 text-lg font-semibold uppercase text-gray-200">Sharing address safely</p>
+      <div className="grid gap-3">
+        <div>
+          <div className="@container/address-header flex justify-start bg-gray-800 p-2">
+            <img src={hostPort + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
+            <div className="flex-col justify-around self-center">
+              <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-slate-50 p-5">
-          <p className="text-md text-center font-light uppercase text-slate-800">
-            Your service provider has partnered with <b>JustWhere</b> to securely access your address.
+        <div className="bg-white-100 py-3">
+          <p className="sm:text-md text-center text-sm font-light uppercase text-slate-800">
+            Your provider has partnered with <span className="font-semibold uppercase">JustWhere</span> to securely access your address.
           </p>
           <div className="mt-3 text-center">
-            <p className="text-md inline font-semibold uppercase text-slate-800">Click</p>
-            <button type="button" className="text-md font-semibold uppercase text-blue-600 underline" onClick={onLogin}>
-              Login
+            <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">Click</p>
+            <button type="button" className="sm:text-md mx-1 text-sm font-semibold uppercase tracking-wide text-blue-600 underline" onClick={onLogin}>
+              Here
             </button>
-            <p className="text-md inline font-semibold uppercase text-slate-800">to continue</p>
+            <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">
+              to Sign In to <span className="font-semibold uppercase">JustWhere</span>
+            </p>
           </div>
         </div>
-        <div className="grid gap-2">
-          <div className="bg-slate-50 p-5 text-justify">
-            <h1 className="text-md font-light uppercase text-gray-800">Share securely and easily</h1>
-            <p className="text-md mt-3 font-light text-gray-700">
-              <b>JustWhere</b> is a privacy respecting service that empowers you to securely and easily share your addresses with family, friends and businesses
-              within the <b>JustWhere</b> community!
+        <div className="grid gap-3">
+          <div className="bg-gray-100 p-3 text-justify">
+            <h1 className="sm:text-md text-sm font-normal uppercase tracking-wider text-gray-800">Share securely & easily</h1>
+            <p className="md:text-md mt-3 text-sm font-light text-gray-700">
+              <span className="font-semibold">JustWhere</span> is a privacy respecting service that empowers you to securely and easily share your addresses
+              with family, friends and businesses within the <span className="font-semibold">JustWhere</span> community!
             </p>
           </div>
-          <div className="bg-slate-50 p-5 text-justify">
-            <h1 className="text-md font-light uppercase text-gray-800">You are in control</h1>
-            <p className="text-md mt-3 font-light text-gray-700">
-              With <b>JustWhere</b>, choose precisely who sees your address and for how long. When addresses change, everyone you have shared with gets the
-              latest one automatically.
+          <div className="bg-gray-100 p-3 text-justify">
+            <h1 className="sm:text-md text-sm font-normal uppercase tracking-wider text-gray-800">You are in control</h1>
+            <p className="sm:text-md mt-3 text-sm font-light text-gray-700">
+              With <span className="font-semibold">JustWhere</span>, choose precisely who sees your address and for how long. When addresses change, everyone
+              you have shared with gets the latest one automatically.
             </p>
           </div>
-          <div className="bg-slate-50 p-5 text-justify">
-            <h1 className="text-md font-light uppercase text-gray-800">Safe & private</h1>
-            <p className="text-md mt-3 font-light text-gray-700">
-              Rest assured your addresses are stored securely with top notch encryption and visible only to people you choose in the <b>JustWhere</b> community.
+          <div className="bg-gray-100 p-3 text-justify">
+            <h1 className="sm:text-md text-sm font-normal uppercase tracking-wider text-gray-800">Safe & private</h1>
+            <p className="sm:text-md mt-3 text-sm font-light text-gray-700">
+              Rest assured your addresses are stored securely with top notch encryption and visible to people you choose in the{" "}
+              <span className="font-semibold">JustWhere</span> community.
             </p>
           </div>
         </div>

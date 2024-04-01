@@ -163,8 +163,14 @@ export class JWErrorBadRequest extends JWError {
 
 type ErrorType = JWErrorAuthenticationRequired | JWErrorForbidden | JWErrorBadRequest | JWError;
 
+export interface UserInfo {
+  userID: string;
+  individualID: string;
+}
+
 export interface AddressProps {
   hostPort: string;
+  userInfo: UserInfo;
   individualID: string;
   addressID?: string;
   serviceProviderID?: string;
@@ -178,6 +184,7 @@ export interface AddressProps {
 
 const JWAddressForm: React.FC<AddressProps> = ({
   hostPort: hostport,
+  userInfo,
   individualID,
   addressID,
   serviceProviderID,
@@ -190,7 +197,6 @@ const JWAddressForm: React.FC<AddressProps> = ({
 }) => {
   const [address, setAddress] = useState<AddressInput>();
   const [userType, setUserType] = useState<UserType>(UserType.Unknown);
-  const [currentUserID, setCurrentUserID] = useState<string>("");
   const [addressValidity, setAddressValidity] = useState<AddressValidity>(AddressValidity.Unknown);
 
   const [showViewAddress, setShowViewAddress] = useState<boolean>(false);
@@ -201,51 +207,48 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const [showViewAddressPrimaryToken, setShowViewAddressPrimaryToken] = useState<boolean>(false);
   const [showViewAddressSecondaryToken, setShowViewAddressSecondaryToken] = useState<boolean>(false);
 
-  const WATCHDOG_MAX_RETRIES = 29;
-  const WATCHDOG_INTERVAL = 2000; // 2 seconds
+  // const WATCHDOG_MAX_RETRIES = 29;
+  // const WATCHDOG_INTERVAL = 2000; // 2 seconds
 
-  let watchDogTimerID: number;
-  let watchDogRetries: number = 0;
+  // let watchDogTimerID: number;
+  // let watchDogRetries: number = 0;
 
-  const loginWatchDog = async () => {
-    console.log("loginWatchDog #", watchDogRetries + 1);
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
-    }
+  // const loginWatchDog = async () => {
+  //   console.log("loginWatchDog #", watchDogRetries + 1);
+  //   if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
+  //     clearTimeout(watchDogTimerID);
+  //   }
 
-    const userInfo = await getCurrentUserInfo(hostport);
-    const userType: UserType = getUserType(userInfo, individualID);
-    setUserType(userType);
-    if (userType === UserType.Unknown) {
-      watchDogRetries++;
-      if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
-        watchDogTimerID = window.setTimeout(async () => {
-          await loginWatchDog();
-        }, WATCHDOG_INTERVAL);
-      }
-    } else {
-      watchDogRetries = 0;
-      setCurrentUserID(userInfo.UserID || "");
-    }
-  };
+  //   const userInfo = await getCurrentUserInfo(hostport);
+  //   const userType: UserType = getUserType(userInfo, individualID);
+  //   setUserType(userType);
+  //   if (userType === UserType.Unknown) {
+  //     watchDogRetries++;
+  //     if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
+  //       watchDogTimerID = window.setTimeout(async () => {
+  //         await loginWatchDog();
+  //       }, WATCHDOG_INTERVAL);
+  //     }
+  //   } else {
+  //     watchDogRetries = 0;
+  //   }
+  // };
 
-  const onLogin = async () => {
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
-    }
+  // const onLogin = async () => {
+  //   if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
+  //     clearTimeout(watchDogTimerID);
+  //   }
 
-    const userInfo = await getCurrentUserInfo(hostport);
-    const userType: UserType = getUserType(userInfo, individualID);
+  //   const userInfo = await getCurrentUserInfo(hostport);
+  //   const userType: UserType = getUserType(userInfo, individualID);
 
-    setUserType(userType);
-    if (userType === UserType.Unknown) {
-      window.open(`${hostport}/api/login`, "_blank");
-      watchDogRetries = 0;
-      watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
-    } else {
-      setCurrentUserID(userInfo.UserID || "");
-    }
-  };
+  //   setUserType(userType);
+  //   if (userType === UserType.Unknown) {
+  //     window.open(`${hostport}/api/login`, "_blank");
+  //     watchDogRetries = 0;
+  //     watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
+  //   }
+  // };
 
   const onViewAddressWithSecondaryToken = async () => {
     try {
@@ -297,15 +300,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
-          onError(new JWErrorAuthenticationRequired("Authentication required"));
+          return onError(new JWErrorAuthenticationRequired("Authentication required"));
         }
         // if error is 403, then throw a JWErrorForbidden
         if (e.response && e.response.status === 403) {
-          onError(new JWErrorForbidden("Forbidden"));
+          return onError(new JWErrorForbidden("Forbidden"));
         }
         // if error is 400, then throw a JWErrorBadRequest
         if (e.response && e.response.status === 400) {
-          onError(new JWErrorBadRequest("Bad request"));
+          return onError(new JWErrorBadRequest("Bad request"));
         }
       }
     }
@@ -329,15 +332,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
-          onError(new JWErrorAuthenticationRequired("Authentication required"));
+          return onError(new JWErrorAuthenticationRequired("Authentication required"));
         }
         // if error is 403, then throw a JWErrorForbidden
         if (e.response && e.response.status === 403) {
-          onError(new JWErrorForbidden("Forbidden"));
+          return onError(new JWErrorForbidden("Forbidden"));
         }
         // if error is 400, then throw a JWErrorBadRequest
         if (e.response && e.response.status === 400) {
-          onError(new JWErrorBadRequest("Bad request"));
+          return onError(new JWErrorBadRequest("Bad request"));
         }
       }
     }
@@ -361,15 +364,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
-          onError(new JWErrorAuthenticationRequired("Authentication required"));
+          return onError(new JWErrorAuthenticationRequired("Authentication required"));
         }
         // if error is 403, then throw a JWErrorForbidden
         if (e.response && e.response.status === 403) {
-          onError(new JWErrorForbidden("Forbidden"));
+          return onError(new JWErrorForbidden("Forbidden"));
         }
         // if error is 400, then throw a JWErrorBadRequest
         if (e.response && e.response.status === 400) {
-          onError(new JWErrorBadRequest("Bad request"));
+          return onError(new JWErrorBadRequest("Bad request"));
         }
       }
     }
@@ -405,15 +408,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
         // if error is 401, then throw a JWErrorAuthenticationRequired
         if (e.response && e.response.status === 401) {
-          onError(new JWErrorAuthenticationRequired("Authentication required"));
+          return onError(new JWErrorAuthenticationRequired("Authentication required"));
         }
         // if error is 403, then throw a JWErrorForbidden
         if (e.response && e.response.status === 403) {
-          onError(new JWErrorForbidden("Forbidden"));
+          return onError(new JWErrorForbidden("Forbidden"));
         }
         // if error is 400, then throw a JWErrorBadRequest
         if (e.response && e.response.status === 400) {
-          onError(new JWErrorBadRequest("Bad request"));
+          return onError(new JWErrorBadRequest("Bad request"));
         }
       }
     }
@@ -440,9 +443,6 @@ const JWAddressForm: React.FC<AddressProps> = ({
         const userInfo = await getCurrentUserInfo(hostport);
         const userType: UserType = getUserType(userInfo, individualID);
         setUserType(userType);
-        if (userType !== UserType.Unknown) {
-          setCurrentUserID(userInfo.UserID || "");
-        }
       } catch (e) {
         if (onError === undefined || typeof onError !== "function") {
           console.warn("JWAddress: no onError handler provided, or onError is not a function");
@@ -686,10 +686,10 @@ const JWAddressForm: React.FC<AddressProps> = ({
         <div className="@container/address-header flex justify-start bg-gray-800 p-2">
           <img src={hostport + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
           <div className="flex-col justify-around self-center">
-            {currentUserID !== "" ? (
+            {userInfo.userID.trim().length !== 0 ? (
               <>
                 <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
-                <p className="ml-4 text-sm font-light text-gray-200">{currentUserID}</p>
+                <p className="ml-4 text-sm font-light text-gray-200">{userInfo.userID}</p>
               </>
             ) : (
               <>
@@ -873,13 +873,13 @@ const JWAddressForm: React.FC<AddressProps> = ({
             </>
           ) : (
             <>
-              <button
+              {/* <button
                 type="button"
                 className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
                 onClick={onLogin}
               >
                 Login
-              </button>
+              </button> */}
             </>
           )}
         </div>

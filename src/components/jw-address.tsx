@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
-import JWAddressForm from "./jw-address-form";
+import JWAddressForm, { JWErrorAuthenticationRequired, UserInfo } from "./jw-address-form";
 import JWLogin, { OnLoginComplete } from "./jw-login";
 
 // Regular expression to check if string is a valid UUID
@@ -82,15 +82,42 @@ const JWAddress: React.FC<JWAddressProps> = ({
   onNewPrimaryToken,
   onNewSecondaryToken,
 }) => {
+  const emptyUserInfo: UserInfo = {
+    userID: "",
+    individualID: "",
+  };
+
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>(emptyUserInfo);
 
   const onLoginComplete: OnLoginComplete = (userID: string, individualID: ID) => {
+    const userInfo: UserInfo = {
+      userID: userID,
+      individualID: individualID,
+    };
+
+    console.info("JWAddress: current user info:", userInfo);
+
+    setCurrentUserInfo(userInfo);
     setIsLoggedIn(true);
   };
 
-  useEffect(() => {
-    setIsLoggedIn(true);
+  const onErrorInternal: OnErrorFcn = (err: JWError) => {
+    console.error("JWAddress: onErrorInternal: ", err);
+    if (err instanceof JWErrorAuthenticationRequired) {
+      const ui: UserInfo = {
+        userID: "",
+        individualID: "",
+      };
+      setCurrentUserInfo(ui);
+      return setIsLoggedIn(false);
+    }
+    if (onError !== undefined) {
+      return onError(err);
+    }
+  };
 
+  useEffect(() => {
     const fnEffect = async () => {
       const config: APIIndividualsConfig = new APIIndividualsConfig({
         basePath: `${hostPort}/api`,
@@ -101,14 +128,18 @@ const JWAddress: React.FC<JWAddressProps> = ({
 
       const api = new APIIndividuals(config);
       try {
+        setIsLoggedIn(false);
         const response = await api.getCurrentUserInfo();
         const userInfo = response.data || null;
         if (userInfo === null) return;
         if (userInfo.IndividualID === undefined) return;
         if (typeof userInfo.IndividualID !== "string") return;
-        if (!JW_ID_PATTERN.test(userInfo.IndividualID)) return;
-        setIsLoggedIn(true);
-      } catch (e) {}
+        if (userInfo.IndividualID.trim().length === 0) return;
+        // if (!JW_ID_PATTERN.test(userInfo.IndividualID)) return;
+        onLoginComplete(userInfo.UserID || "", userInfo.IndividualID);
+      } catch (e) {
+        console.error("JWAddress: ", e);
+      }
     };
     fnEffect();
   }, [hostPort]);
@@ -118,13 +149,14 @@ const JWAddress: React.FC<JWAddressProps> = ({
       {isLoggedIn ? (
         <JWAddressForm
           hostPort={hostPort}
+          userInfo={currentUserInfo}
           individualID={individualID || ""}
           addressID={addressID}
           serviceProviderID={serviceProviderID}
           primaryToken={primaryToken}
           beneficiaryID={beneficiaryID}
           secondaryToken={secondaryToken}
-          onError={onError}
+          onError={onErrorInternal}
           onNewPrimaryToken={onNewPrimaryToken}
           onNewSecondaryToken={onNewSecondaryToken}
         />

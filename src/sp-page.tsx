@@ -147,7 +147,7 @@ const SPPage: React.FC = () => {
         </header>
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="grid gap-4">
-            <div className="bg-gray-100 p-4">
+            <div className="bg-gray-100 p-2">
               <JWAddress
                 embedAs={EmbedMode.SERVICE_PROVIDER}
                 hostPort={jwHost}
