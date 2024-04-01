@@ -137,7 +137,7 @@ const BenPage: React.FC = () => {
 
   return (
     <>
-      <div className="mt-4 max-h-screen">
+      <div className="mt-4">
         <header className="mb-6 bg-green-900 py-4">
           <div className="text-center text-white">
             <div className="mb-2 text-xl font-bold">Rapid Delivery Services</div>
