@@ -669,14 +669,21 @@ const JWAddressForm: React.FC<AddressProps> = ({
   return (
     <>
       <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">
-        <div>
+        <div className="@container/address-header flex justify-start bg-gray-800 p-2">
+          <img src={hostport + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
+          <div className="flex-col justify-around self-center">
+            <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
+          </div>
+        </div>
+
+        <div className="mt-2">
           <label htmlFor="address-type" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
             Type
           </label>
           <input
             type="text"
             id="address-type"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             placeholder="No value here"
           />
         </div>
@@ -688,7 +695,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
           <input
             type="text"
             id="address-name"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             value={address?.addressee}
           />
         </div>
@@ -700,7 +707,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
           <input
             type="text"
             id="address-street1"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
             value={address?.street}
           />
         </div>
@@ -713,7 +720,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="text"
               id="address-city"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.city}
             />
           </div>
@@ -724,7 +731,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="text"
               id="address-state"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.state}
             />
           </div>
@@ -738,7 +745,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="text"
               id="address-zipcode"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.zipCode}
             />
           </div>
@@ -749,7 +756,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="text"
               id="address-country"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.country}
             />
           </div>
@@ -763,7 +770,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="tel"
               id="address-phone"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.phone}
             />
           </div>
@@ -774,7 +781,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
             <input
               type="email"
               id="address-email"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
               value={address?.email}
             />
           </div>
