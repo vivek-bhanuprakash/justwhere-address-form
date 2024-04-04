@@ -109,11 +109,9 @@ const BenPage: React.FC = () => {
     setUserEmail("");
     setUserType(UserType.Unknown);
 
-    if (cookies["X-USER-EMAIL"] !== undefined) {
+    if (cookies["X-USER-EMAIL"] !== undefined && cookies["X-USER-TYPE"] !== undefined) {
       setUserEmail(cookies["X-USER-EMAIL"]);
-    }
 
-    if (cookies["X-USER-TYPE"] !== undefined) {
       if (cookies["X-USER-TYPE"] === "INDIVIDUAL") {
         setUserType(UserType.Customer);
         setUserTypeName("Customer");
@@ -186,9 +184,19 @@ const BenPage: React.FC = () => {
 
           <div className="grid gap-4">
             <div className="bg-gray-200 p-4">
-              <h2 className="text-md mb-4 font-semibold uppercase">User Information</h2>
-              <div className="mb-2 text-sm font-normal uppercase">{userEmail}</div>
-              <div className="mb-0 text-sm font-normal uppercase">Type: {userTypeName}</div>
+              {userType !== UserType.Unknown ? (
+                <>
+                  <h2 className="text-md mb-4 font-semibold uppercase">User Information</h2>
+                  <div className="mb-2 text-sm font-normal uppercase">{userEmail}</div>
+                  <div className="mb-0 text-sm font-normal uppercase">Type: {userTypeName}</div>
+                </>
+              ) : (
+                <>
+                  <a href="/app/login" className="text-md font-medium uppercase text-blue-500 underline">
+                    Login
+                  </a>
+                </>
+              )}
             </div>
 
             <div className="hidden bg-gray-200 p-4 text-left">

@@ -34,20 +34,20 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
   let watchDogTimerID: number;
   let watchDogRetries: number = 0;
 
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
-    basePath: `${hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APIIndividuals(config);
-
   const loginWatchDog = async () => {
     console.info("JWLogin: WatchDog retry #", watchDogRetries + 1);
     if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
       clearTimeout(watchDogTimerID);
     }
+
+    const config: APIIndividualsConfig = new APIIndividualsConfig({
+      basePath: `${hostPort}/api`,
+      baseOptions: {
+        withCredentials: true,
+      },
+    });
+
+    const api = new APIIndividuals(config);
 
     const response = await api.getCurrentUserInfo();
     const userInfo = response.data || null;

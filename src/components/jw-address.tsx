@@ -119,26 +119,28 @@ const JWAddress: React.FC<JWAddressProps> = ({
 
   useEffect(() => {
     const fnEffect = async () => {
-      const config: APIIndividualsConfig = new APIIndividualsConfig({
-        basePath: `${hostPort}/api`,
-        baseOptions: {
-          withCredentials: true,
-        },
-      });
+      if (hostPort !== undefined && hostPort.trim().length > 0) {
+        const config: APIIndividualsConfig = new APIIndividualsConfig({
+          basePath: `${hostPort}/api`,
+          baseOptions: {
+            withCredentials: true,
+          },
+        });
 
-      const api = new APIIndividuals(config);
-      try {
-        setIsLoggedIn(false);
-        const response = await api.getCurrentUserInfo();
-        const userInfo = response.data || null;
-        if (userInfo === null) return;
-        if (userInfo.IndividualID === undefined) return;
-        if (typeof userInfo.IndividualID !== "string") return;
-        if (userInfo.IndividualID.trim().length === 0) return;
-        // if (!JW_ID_PATTERN.test(userInfo.IndividualID)) return;
-        onLoginComplete(userInfo.UserID || "", userInfo.IndividualID);
-      } catch (e) {
-        console.error("JWAddress: ", e);
+        const api = new APIIndividuals(config);
+        try {
+          setIsLoggedIn(false);
+          const response = await api.getCurrentUserInfo();
+          const userInfo = response.data || null;
+          if (userInfo === null) return;
+          if (userInfo.IndividualID === undefined) return;
+          if (typeof userInfo.IndividualID !== "string") return;
+          if (userInfo.IndividualID.trim().length === 0) return;
+          // if (!JW_ID_PATTERN.test(userInfo.IndividualID)) return;
+          onLoginComplete(userInfo.UserID || "", userInfo.IndividualID);
+        } catch (e) {
+          console.error("JWAddress: ", e);
+        }
       }
     };
     fnEffect();
