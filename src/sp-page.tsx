@@ -1,6 +1,6 @@
-import React, { ChangeEventHandler, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import JWAddress, { EmbedMode, JWErrorBadRequest } from "./components/jw-address";
+import JWAddress, { EmbedMode } from "./components/jw-address";
 
 enum UserType {
   Unknown,
