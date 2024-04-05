@@ -1,9 +1,22 @@
 {
-    "hostport": "",
+  "https://localhost": {
     "individualID": "",
     "addressID": "",
     "serviceProviderID": "",
+    "serviceProviderAccountID": "",
     "primaryToken": "",
     "beneficiaryID": "",
+    "beneficiaryAccountID": "",
     "secondaryToken": ""
+  },
+  "https://dev.justwhere.io": {
+    "individualID": "",
+    "addressID": "",
+    "serviceProviderID": "",
+    "serviceProviderAccountID": "",
+    "primaryToken": "",
+    "beneficiaryID": "",
+    "beneficiaryAccountID": "",
+    "secondaryToken": ""
+  }
 }

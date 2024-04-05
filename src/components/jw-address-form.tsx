@@ -684,7 +684,12 @@ const JWAddressForm: React.FC<AddressProps> = ({
     <>
       <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">
         <div className="@container/address-header flex justify-start bg-gray-800 p-2">
-          <img src={hostport + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
+          {hostport !== undefined && hostport.trim().length > 0 ? (
+            <img src={hostport + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
+          ) : (
+            <p className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8">JW</p>
+          )}
+
           <div className="flex-col justify-around self-center">
             {userInfo.userID.trim().length !== 0 ? (
               <>

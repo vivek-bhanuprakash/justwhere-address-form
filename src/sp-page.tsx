@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { ChangeEventHandler, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import JWAddress, { EmbedMode, JWErrorBadRequest } from "./components/jw-address";
 
@@ -9,6 +9,16 @@ enum UserType {
   BNEmployee,
 }
 
+interface Data {
+  HostPort: string;
+  IndividualID: string;
+  AddressID: string;
+  ServiceProviderID: string;
+  PrimaryToken: string;
+  BeneficiaryID: string;
+  SecondaryToken: string;
+}
+
 const SPPage: React.FC = () => {
   const [cookies] = useCookies();
 
@@ -17,6 +27,9 @@ const SPPage: React.FC = () => {
   const [userTypeName, setUserTypeName] = useState<string>("");
 
   const [jwHost, setJWHost] = useState<string>("");
+
+  const [activeHP, setActiveHP] = React.useState("");
+  const [hps, setHPs] = React.useState<Record<string, Data>>({});
 
   const [individualID, setIndividualID] = useState<string>("");
   const [addressID, setAddressID] = useState<string>("");
@@ -38,6 +51,26 @@ const SPPage: React.FC = () => {
   //         // Anything else
   //     }
   // }
+
+  const setActiveData = (d: Data) => {
+    setJWHost(d.HostPort);
+    setIndividualID(d.IndividualID);
+    setAddressID(d.AddressID);
+    setServiceProviderID(d.ServiceProviderID);
+    setPrimaryToken(d.PrimaryToken);
+    setBeneficiaryID(d.BeneficiaryID);
+    setSecondaryToken(d.SecondaryToken);
+  };
+
+  const hpChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const d: Data = {
+      ...hps[event.target.value],
+      HostPort: event.target.value,
+    };
+
+    setActiveHP(d.HostPort);
+    setActiveData(d);
+  };
 
   const onNewPrimaryToken = (token: string) => {
     setPrimaryToken(token);
@@ -79,21 +112,23 @@ const SPPage: React.FC = () => {
     fetch("/app/data", { signal: abortController.signal })
       .then((response) => response.json())
       .then((data) => {
-        const hostport: string = data["hostport"] || "";
-        const indID: string = data["individualID"] || "";
-        const adrID: string = data["addressID"] || "";
-        const spID: string = data["serviceProviderID"] || "";
-        const pTkn: string = data["primaryToken"] || "";
-        const benID: string = data["beneficiaryID"] || "";
-        const sTkn: string = data["secondaryToken"] || "";
-
-        if (hostport !== "") setJWHost(hostport);
-        if (indID !== "") setIndividualID(indID);
-        if (adrID !== "") setAddressID(adrID);
-        if (spID !== "") setServiceProviderID(spID);
-        if (pTkn !== "") setPrimaryToken(pTkn);
-        if (benID !== "") setBeneficiaryID(benID);
-        if (sTkn !== "") setSecondaryToken(sTkn);
+        if (data !== undefined) {
+          const m: Record<string, Data> = {} as Record<string, Data>;
+          Object.keys(data).map((hostPort: string) => {
+            const d: Data = {
+              HostPort: hostPort,
+              IndividualID: data[hostPort]["individualID"],
+              AddressID: data[hostPort]["addressID"],
+              ServiceProviderID: data[hostPort]["serviceProviderID"],
+              PrimaryToken: data[hostPort]["primaryToken"],
+              BeneficiaryID: data[hostPort]["beneficiaryID"],
+              SecondaryToken: data[hostPort]["secondaryToken"],
+            };
+            m[hostPort] = d;
+          });
+          setHPs(m);
+          setActiveHP(Object.keys(data).at(0) || "");
+        }
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -104,6 +139,15 @@ const SPPage: React.FC = () => {
       console.log("aborted any pending fetch");
     };
   }, []);
+
+  useEffect(() => {
+    if (activeHP === undefined || activeHP.trim().length === 0) return;
+
+    if (hps === undefined || Object.keys(hps).length === 0) return;
+
+    const d: Data = hps[activeHP];
+    setActiveData(d);
+  }, [activeHP, hps]);
 
   useEffect(() => {
     setUserEmail("");
@@ -159,7 +203,7 @@ const SPPage: React.FC = () => {
                 onNewSecondaryToken={onNewSecondaryToken}
               />
             </div>
-            {userType == UserType.Customer ? (
+            {userType === UserType.Customer ? (
               <div className="">
                 <div className="bg-gray-200 p-4">
                   <h2 className="mb-4 text-lg font-semibold uppercase">Output</h2>
@@ -210,13 +254,15 @@ const SPPage: React.FC = () => {
                 <label htmlFor="hostport" className="mb-1 block text-xs font-semibold uppercase">
                   JustWhere Host
                 </label>
-                <input
-                  type="text"
-                  id="hostport"
-                  className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  value={jwHost}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setJWHost(event.target.value)}
-                ></input>
+                <select
+                  className="block w-full rounded-md border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                  value={activeHP}
+                  onChange={hpChanged}
+                >
+                  {Object.keys(hps).map((hp) => (
+                    <option value={hp}>{hp}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -230,7 +276,7 @@ const SPPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  id="firstName"
+                  id="individualID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
                   value={individualID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
@@ -266,7 +312,7 @@ const SPPage: React.FC = () => {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}
                 ></input>
               </div>
-              {userType == UserType.SPEmployee ? (
+              {userType === UserType.SPEmployee ? (
                 <div className="mb-0">
                   <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
                     Address Key
