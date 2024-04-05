@@ -1,4 +1,5 @@
 import { AxiosError } from "axios";
+import { JWAuthenticationRequired } from "../../components/jw-address";
 import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "../internal/apis/individuals";
 import {
   Address,
@@ -120,6 +121,16 @@ export const GetCurrentUserInfo = async (request: CurrentUserInfoRequest): Promi
     };
   } catch (e) {
     return throwError(e);
+  }
+};
+
+export const IsLoggedIn = async (hostPort: string): Promise<boolean> => {
+  try {
+    const u = await GetCurrentUserInfo({ hostPort });
+    return u.userID.trim().length > 0 && u.individualID.trim().length > 0;
+  } catch (e) {
+    if (e instanceof JWAuthenticationRequired) return false;
+    throw e;
   }
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
-import { ID, OnErrorFcn } from "./jw-address";
+import { GetCurrentUserInfo, IndividualID, IsLoggedIn, JWErrorAuthenticationRequired } from "../../sdk";
+import { OnErrorFcn } from "../types";
 
 // Source: https://stackoverflow.com/questions/53446020/how-to-compare-oldvalues-and-newvalues-on-react-hooks-useeffect
 const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -11,107 +11,106 @@ const usePrevious = <T extends unknown>(value: T): T | undefined => {
   return ref.current;
 };
 
-export const LOGIN_MAX_RETRIES = 29;
-export const LOGIN_CHECK_INTERVAL = 2000;
+export const WATCHDOG_MAX_RETRIES = 29;
+export const WATCHDOG_INTERVAL = 2000;
 
-export type OnLoginComplete = (userID: string, individualID: ID) => void;
-
-interface JWLoginProps {
+export type OnLoginCompleteFcn = (userID: string, individualID: IndividualID) => void;
+export type OnLoginRetriesExceededFcn = (interval: number, retries: number) => void;
+interface LoginProps {
   hostPort: string;
-  onLoginComplete: OnLoginComplete;
+  onComplete: OnLoginCompleteFcn;
+  onRetriesExceeded?: OnLoginRetriesExceededFcn;
   onError?: OnErrorFcn;
-
-  retries?: number;
-  interval?: number;
 }
 
-const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, retries, interval }) => {
+const Login: React.FC<LoginProps> = ({ hostPort, onComplete, onRetriesExceeded, onError }) => {
   const prevHostPort = usePrevious(hostPort);
-
-  let WATCHDOG_MAX_RETRIES = retries || LOGIN_MAX_RETRIES;
-  let WATCHDOG_INTERVAL = interval || LOGIN_CHECK_INTERVAL; // 2 seconds
 
   let watchDogTimerID: number;
   let watchDogRetries: number = 0;
 
-  const loginWatchDog = async () => {
-    console.info("JWLogin: WatchDog retry #", watchDogRetries + 1);
+  const runWatchDog = async () => {
     if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
       clearTimeout(watchDogTimerID);
     }
 
-    const config: APIIndividualsConfig = new APIIndividualsConfig({
-      basePath: `${hostPort}/api`,
-      baseOptions: {
-        withCredentials: true,
-      },
-    });
-
-    const api = new APIIndividuals(config);
-
-    const response = await api.getCurrentUserInfo();
-    const userInfo = response.data || null;
-    if (userInfo !== null) {
-      if (typeof userInfo.IndividualID === "string" && userInfo.IndividualID.length > 0) {
-        return onLoginComplete(userInfo.UserID || "", userInfo.IndividualID || "");
+    try {
+      const u = await GetCurrentUserInfo({ hostPort });
+      if (typeof u.individualID === "string" && u.individualID.length > 0) {
+        return onComplete(u.userID, u.individualID);
+      }
+    } catch (e: any) {
+      if (!(e instanceof JWErrorAuthenticationRequired)) {
+        watchDogRetries = 0;
+        if (onError !== undefined) {
+          return onError(e);
+        } else {
+          return;
+        }
       }
     }
 
     watchDogRetries++;
     if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
       watchDogTimerID = window.setTimeout(async () => {
-        await loginWatchDog();
+        await runWatchDog();
       }, WATCHDOG_INTERVAL);
     } else {
+      // retries exhausted
       watchDogRetries = 0;
+      if (onRetriesExceeded !== undefined) {
+        return onRetriesExceeded(WATCHDOG_INTERVAL, WATCHDOG_MAX_RETRIES);
+      } else {
+        return;
+      }
     }
   };
 
   const onLogin = async () => {
     if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
       clearTimeout(watchDogTimerID);
+      watchDogRetries = 0;
     }
 
-    window.open(`${hostPort}/api/login`, "_blank");
-    watchDogRetries = 0;
-    watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
+    if (!(await IsLoggedIn(hostPort))) {
+      window.open(`${hostPort}/api/login`, "_blank");
+      watchDogRetries = 0;
+      watchDogTimerID = window.setTimeout(runWatchDog, WATCHDOG_INTERVAL);
+    }
   };
 
   useEffect(() => {
-    let checkInProgress: boolean = false;
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      checkInProgress = true;
-      console.info("JWLogin: Login was in progress.  It will be interrupted and retried.");
-      clearTimeout(watchDogTimerID);
-    }
-
-    console.info("JWLogin: WatchDog retries:", WATCHDOG_MAX_RETRIES, ", interval:", WATCHDOG_INTERVAL);
-    console.info("JWLogin: Host previous:", prevHostPort, ", current:", hostPort);
-
-    if (checkInProgress) {
-      if (prevHostPort !== hostPort) {
-        onLogin();
-        return;
-      } else {
-        loginWatchDog();
+    const fn = async () => {
+      let checkInProgress: boolean = false;
+      if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
+        checkInProgress = true;
+        clearTimeout(watchDogTimerID);
       }
-    }
+
+      if (checkInProgress) {
+        if (prevHostPort !== hostPort) {
+          await onLogin();
+        } else {
+          await runWatchDog();
+        }
+      }
+    };
+
+    if (hostPort !== undefined && hostPort.trim().length > 0) fn();
   }, [hostPort]);
 
   return (
     <>
       <div className="grid gap-3">
-        <div>
-          <div className="@container/address-header flex justify-start bg-gray-800 p-2">
-            <img src={hostPort + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
-            <div className="flex-col justify-around self-center">
-              <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
-            </div>
+        <div className="@container/address-header flex justify-start bg-gray-800 p-2">
+          <img src={hostPort + "/justwhere.svg"} alt="JustWhere" className="@xs/address-header:h-10 @xs/address-header:w-10 h-8 w-8" />
+          <div className="flex-col justify-around self-center">
+            <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Sharing address safely</p>
           </div>
         </div>
         <div className="bg-white-100 py-3">
           <p className="sm:text-md text-center text-sm font-light uppercase text-slate-800">
-            Your provider has partnered with <span className="font-semibold uppercase">JustWhere</span> to securely access your address.
+            This provider has partnered with <span className="font-semibold uppercase">JustWhere</span> to securely access the address.
           </p>
           <div className="mt-3 text-center">
             <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">Click</p>
@@ -151,4 +150,4 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
   );
 };
 
-export default JWLogin;
+export default Login;
