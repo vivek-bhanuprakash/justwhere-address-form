@@ -13,6 +13,7 @@ import {
   SecondaryToken,
   ServiceProviderID,
   TagValue,
+  UserID,
 } from "../types/types";
 
 export interface PrimaryTokenAddressRequest {
@@ -37,22 +38,7 @@ export const GetAddressUsingPrimaryToken = async (request: PrimaryTokenAddressRe
     const address = response.data || null;
     return convertToAddress(address);
   } catch (e) {
-    if (e instanceof AxiosError) {
-      // if error is 401, then throw a JWErrorAuthenticationRequired
-      if (e.response && e.response.status === 401) {
-        throw new JWErrorAuthenticationRequired("quthentication required");
-      }
-      // if error is 403, then throw a JWErrorForbidden
-      if (e.response && e.response.status === 403) {
-        throw new JWErrorForbidden("Forbidden");
-      }
-      // if error is 400, then throw a JWErrorBadRequest
-      if (e.response && e.response.status === 400) {
-        throw new JWErrorBadRequest("bad request");
-      }
-    }
-
-    throw new JWError((e as Error).message);
+    return throwError(e);
   }
 };
 
@@ -78,22 +64,7 @@ export const GetAddressUsingSecondaryToken = async (request: SecondaryTokenAddre
     const address = response.data || null;
     return convertToAddress(address);
   } catch (e) {
-    if (e instanceof AxiosError) {
-      // if error is 401, then throw a JWErrorAuthenticationRequired
-      if (e.response && e.response.status === 401) {
-        throw new JWErrorAuthenticationRequired("quthentication required");
-      }
-      // if error is 403, then throw a JWErrorForbidden
-      if (e.response && e.response.status === 403) {
-        throw new JWErrorForbidden("Forbidden");
-      }
-      // if error is 400, then throw a JWErrorBadRequest
-      if (e.response && e.response.status === 400) {
-        throw new JWErrorBadRequest("bad request");
-      }
-    }
-
-    throw new JWError((e as Error).message);
+    return throwError(e);
   }
 };
 
@@ -118,22 +89,37 @@ export const GetAddressUsingOwnerToken = async (request: OwnerTokenAddressReques
     const address = response.data || null;
     return convertToAddress(address);
   } catch (e) {
-    if (e instanceof AxiosError) {
-      // if error is 401, then throw a JWErrorAuthenticationRequired
-      if (e.response && e.response.status === 401) {
-        throw new JWErrorAuthenticationRequired("quthentication required");
-      }
-      // if error is 403, then throw a JWErrorForbidden
-      if (e.response && e.response.status === 403) {
-        throw new JWErrorForbidden("Forbidden");
-      }
-      // if error is 400, then throw a JWErrorBadRequest
-      if (e.response && e.response.status === 400) {
-        throw new JWErrorBadRequest("bad request");
-      }
-    }
+    return throwError(e);
+  }
+};
 
-    throw new JWError((e as Error).message);
+export interface CurrentUserInfoRequest {
+  hostPort: string;
+}
+
+export interface CurrentUserInfoResponse {
+  userID: UserID;
+  individualID: IndividualID;
+}
+
+export const GetCurrentUserInfo = async (request: CurrentUserInfoRequest): Promise<CurrentUserInfoResponse> => {
+  const config: APIIndividualsConfig = new APIIndividualsConfig({
+    basePath: `${request.hostPort}/api`,
+    baseOptions: {
+      withCredentials: true,
+    },
+  });
+
+  const api = new APIIndividuals(config);
+
+  try {
+    const response = await api.getCurrentUserInfo();
+    return {
+      userID: response.data.UserID || "",
+      individualID: response.data.IndividualID || "",
+    };
+  } catch (e) {
+    return throwError(e);
   }
 };
 
@@ -157,14 +143,33 @@ function convertToAddress(input: AddressInput): Address {
   // If tags exist, iterate through them and convert only non-private ones
   const newTags: Record<string, TagValue> = {};
   for (const [tagKey, tag] of Object.entries(input.tags)) {
-    if (!tag.Private) {
-      if (tagKey === "atag") output.Type = tag.Name || "";
-      else if (tag.Name) {
-        newTags[tag.Name] = tag.Value || "";
-      }
+    if (tag.Private) continue;
+
+    if (tagKey === "atag") output.Label = tag.Name || "";
+    else if (tag.Name && tag.Name.trim().length > 0) {
+      newTags[tag.Name.trim()] = tag.Value || "";
     }
   }
 
   output.Tags = newTags;
   return output;
 }
+
+const throwError = (e: any) => {
+  if (e instanceof AxiosError) {
+    // if error is 401, then throw a JWErrorAuthenticationRequired
+    if (e.response && e.response.status === 401) {
+      throw new JWErrorAuthenticationRequired("quthentication required");
+    }
+    // if error is 403, then throw a JWErrorForbidden
+    if (e.response && e.response.status === 403) {
+      throw new JWErrorForbidden("Forbidden");
+    }
+    // if error is 400, then throw a JWErrorBadRequest
+    if (e.response && e.response.status === 400) {
+      throw new JWErrorBadRequest("bad request");
+    }
+  }
+
+  throw new JWError((e as Error).message);
+};

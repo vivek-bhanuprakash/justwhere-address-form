@@ -1,3 +1,4 @@
+export type UserID = string;
 export type IndividualID = string;
 export type AddressID = string;
 export type ServiceProviderID = string;
@@ -14,7 +15,7 @@ export type TagValue = null | string | number | boolean | object;
 export interface Address {
   ID: AddressID;
   IndividualID: IndividualID;
-  Type?: string;
+  Label?: string;
   Name?: string;
   Street1?: string;
   Street2?: string;
