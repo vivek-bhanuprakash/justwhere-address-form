@@ -4,6 +4,27 @@ import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APII
 import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "./../apis/tokens";
 import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+
+const Input: React.FC<InputProps> = (props: InputProps) => {
+  return (
+    <input
+      type="text"
+      className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+      {...props}
+    />
+  );
+};
+
+type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;
+const Label: React.FC<LabelProps> = (props: LabelProps) => {
+  return (
+    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900" {...props}>
+      {props.children}
+    </label>
+  );
+};
+
 const genereratePrimaryToken = async (hostport: string, individualID: string, addressID: string, serviceProviderID: string): Promise<string> => {
   const input: PrimaryTokenInput = {
     individualID: individualID,
@@ -545,8 +566,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
   // visibility of list addresses btn
   useEffect(() => {
-    // setShowListAddresses(userType === UserType.Self);
-    setShowListAddresses(false);
+    setShowListAddresses(userType === UserType.Self);
   }, [userType]);
 
   // visibility of generate primary token btn
@@ -705,128 +725,81 @@ const JWAddressForm: React.FC<AddressProps> = ({
         </div>
 
         <div className="mt-2">
-          <label htmlFor="address-type" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-            Type
-          </label>
-          <input
-            type="text"
-            id="address-type"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            placeholder="No value here"
-          />
+          <Label htmlFor="address-type">Type</Label>
+          <Input id="address-type" placeholder="No value here" />
         </div>
 
         <div>
-          <label htmlFor="address-name" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-            Name
-          </label>
-          <input
-            type="text"
-            id="address-name"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            value={address?.addressee}
-          />
+          <Label htmlFor="address-name">Name</Label>
+          <Input id="address-name" value={address?.addressee} />
         </div>
 
         <div>
-          <label htmlFor="address-street1" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-            Street
-          </label>
-          <input
-            type="text"
-            id="address-street1"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            value={address?.street}
-          />
+          <Label htmlFor="address-street1">Street</Label>
+          <Input id="address-street1" value={address?.street} />
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-city" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              City
-            </label>
-            <input
-              type="text"
-              id="address-city"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.city}
-            />
+            <Label htmlFor="address-city">City</Label>
+            <Input id="address-city" value={address?.city} />
           </div>
           <div>
-            <label htmlFor="address-state" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              State
-            </label>
-            <input
-              type="text"
-              id="address-state"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.state}
-            />
+            <Label htmlFor="address-state">State</Label>
+            <Input id="address-state" value={address?.state} />
           </div>
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-zipcode" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              Post Code
-            </label>
-            <input
-              type="text"
-              id="address-zipcode"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.zipCode}
-            />
+            <Label htmlFor="address-zipcode">Post Code</Label>
+            <Input id="address-zipcode" value={address?.zipCode} />
           </div>
           <div>
-            <label htmlFor="address-country" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              Country
-            </label>
-            <input
-              type="text"
-              id="address-country"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.country}
-            />
+            <Label htmlFor="address-country">Country</Label>
+            <Input id="address-country" value={address?.country} />
           </div>
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
-            <label htmlFor="address-phone" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              Phone
-            </label>
-            <input
-              type="tel"
-              id="address-phone"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.phone}
-            />
+            <Label htmlFor="address-phone">Phone</Label>
+            <Input type="tel" id="address-phone" value={address?.phone} />
           </div>
           <div>
-            <label htmlFor="address-email" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900">
-              Email
-            </label>
-            <input
-              type="email"
-              id="address-email"
-              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-              value={address?.email}
-            />
+            <Label htmlFor="address-email">Email</Label>
+            <Input type="email" id="address-email" value={address?.email} />
           </div>
         </div>
 
-        <div className="flex-cols flex gap-3">
-          {userType == UserType.Self ? (
+        <div className="inline-flex gap-1.5 rounded-md shadow-sm" role="group">
+          {userType === UserType.Self ? (
             <>
-              {showGenPrimaryToken || showGenSecondaryToken ? <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">Get Handle</p> : <></>}
+              {showListAddresses ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
+                  onClick={onListAddress}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
+                    <path d="M3 4.75a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM6.25 3a.75.75 0 0 0 0 1.5h7a.75.75 0 0 0 0-1.5h-7ZM6.25 7.25a.75.75 0 0 0 0 1.5h7a.75.75 0 0 0 0-1.5h-7ZM6.25 11.5a.75.75 0 0 0 0 1.5h7a.75.75 0 0 0 0-1.5h-7ZM4 12.25a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM3 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+                  </svg>
+                  <p className="mx-1 inline">List</p>
+                </button>
+              ) : (
+                <></>
+              )}
 
               {showGenPrimaryToken ? (
                 <button
                   type="button"
-                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
                   onClick={onGeneratePrimaryToken}
                 >
-                  Service
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
+                    <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
+                  </svg>
+                  <p className="mx-1 inline">Share Service</p>
                 </button>
               ) : (
                 <></>
@@ -835,16 +808,19 @@ const JWAddressForm: React.FC<AddressProps> = ({
               {showGenSecondaryToken ? (
                 <button
                   type="button"
-                  className="border border-gray-200 bg-gray-700 px-4 py-2 text-sm font-normal uppercase text-white hover:bg-gray-100 hover:text-gray-700 focus:z-10 focus:bg-gray-100 focus:text-gray-700 focus:ring-2 focus:ring-gray-700"
+                  className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
                   onClick={onGenerateSecondaryToken}
                 >
-                  Beneficiary
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
+                    <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
+                  </svg>
+                  <p className="mx-1 inline">Share Beneficiary</p>
                 </button>
               ) : (
                 <></>
               )}
             </>
-          ) : userType == UserType.Other ? (
+          ) : userType === UserType.Other ? (
             <>
               {showViewAddressPrimaryToken || showViewAddressSecondaryToken ? (
                 <p className="mr-1 self-center text-sm font-bold uppercase text-gray-900">View Address</p>
