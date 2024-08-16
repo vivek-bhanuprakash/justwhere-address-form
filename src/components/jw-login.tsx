@@ -72,9 +72,11 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
       clearTimeout(watchDogTimerID);
     }
 
-    window.open(`${hostPort}/api/login`, "_blank");
-    watchDogRetries = 0;
-    watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
+    // window.open(`${hostPort}/api/login`, "_blank");
+    // watchDogRetries = 0;
+    // watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
+
+    window.open(`${hostPort}/api/login`, "_top");
   };
 
   useEffect(() => {
@@ -115,9 +117,14 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
           </p>
           <div className="mt-3 text-center">
             <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">Click</p>
-            <button type="button" className="sm:text-md mx-1 text-sm font-semibold uppercase tracking-wide text-blue-600 underline" onClick={onLogin}>
+            <a
+              href="#"
+              referrerPolicy="origin"
+              className="sm:text-md mx-1 text-sm font-semibold uppercase tracking-wide text-blue-600 underline"
+              onClick={onLogin}
+            >
               Here
-            </button>
+            </a>
             <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">
               to Sign In to <span className="font-semibold uppercase">JustWhere</span>
             </p>
