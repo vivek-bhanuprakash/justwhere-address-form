@@ -255,6 +255,7 @@ const SPPage: React.FC = () => {
                   JustWhere Host
                 </label>
                 <select
+                  id="hostport"
                   className="block w-full rounded-md border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
                   value={activeHP}
                   onChange={hpChanged}

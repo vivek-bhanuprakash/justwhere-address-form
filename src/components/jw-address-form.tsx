@@ -41,7 +41,11 @@ const genereratePrimaryToken = async (hostport: string, individualID: string, ad
 
   const api = new APITokens(config);
 
-  const response = await api.createPrimaryToken(input);
+  const response = await api.createPrimaryToken(input, {
+    headers: {
+      Authorization: sessionStorage.getItem("JWAUTH"),
+    },
+  });
   const token = response.data.token || "";
   return token;
 };
@@ -62,7 +66,11 @@ const genererateSecondaryToken = async (hostport: string, serviceProviderID: str
 
   const api = new APITokens(config);
 
-  const response = await api.createSecondaryToken(input);
+  const response = await api.createSecondaryToken(input, {
+    headers: {
+      Authorization: sessionStorage.getItem("JWAUTH"),
+    },
+  });
   const token = response.data.token || "";
   return token;
 };
@@ -77,7 +85,11 @@ const getAddressUsingProviderToken = async (hostport: string, addressID: string,
 
   const api = new APIIndividuals(config);
 
-  const response = await api.getAddressByID(addressID, token, providerID);
+  const response = await api.getAddressByID(addressID, token, providerID, undefined, {
+    headers: {
+      Authorization: sessionStorage.getItem("JWAUTH"),
+    },
+  });
   const address = response.data || null;
   return address;
 };
@@ -92,7 +104,11 @@ const getSelfAddress = async (hostport: string, addressID: string, individualID:
 
   const api = new APIIndividuals(config);
 
-  const response = await api.getAddressByID(addressID, "", "", individualID);
+  const response = await api.getAddressByID(addressID, "", "", individualID, {
+    headers: {
+      Authorization: sessionStorage.getItem("JWAUTH"),
+    },
+  });
   const address = response.data || null;
   return address;
 };
@@ -132,7 +148,11 @@ const getCurrentUserInfo = async (hostport: string): Promise<GetCurrentUserInfo2
 
   const api = new APIIndividuals(config);
 
-  const response = await api.getCurrentUserInfo();
+  const response = await api.getCurrentUserInfo({
+    headers: {
+      Authorization: sessionStorage.getItem("JWAUTH"),
+    },
+  });
   return response.data || null;
 };
 

@@ -130,7 +130,11 @@ const JWAddress: React.FC<JWAddressProps> = ({
         const api = new APIIndividuals(config);
         try {
           setIsLoggedIn(false);
-          const response = await api.getCurrentUserInfo();
+          const response = await api.getCurrentUserInfo({
+            headers: {
+              Authorization: sessionStorage.getItem("JWAUTH"),
+            },
+          });
           const userInfo = response.data || null;
           if (userInfo === null) return;
           if (userInfo.IndividualID === undefined) return;
