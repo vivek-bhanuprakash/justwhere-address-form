@@ -1,13 +1,16 @@
-import { AxiosError } from "axios";
+import { AxiosError, RawAxiosRequestHeaders } from "axios";
 import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "../internal/apis/tokens";
 import {
   AddressID,
   BeneficiaryID,
+  GetAuthToken,
   IndividualID,
   JWError,
   JWErrorAuthenticationRequired,
   JWErrorBadRequest,
   JWErrorForbidden,
+  JWErrorNotFound,
+  JWErrorServerError,
   PrimaryToken,
   SecondaryToken,
   ServiceProviderID,
@@ -42,29 +45,15 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
   const api = new APITokens(config);
 
   try {
-    const response = await api.createPrimaryToken(input);
+    const headers = GetHeaders();
+    const response = await api.createPrimaryToken(input, { headers });
 
     return {
       request: request,
       token: response.data.token || "",
     };
   } catch (e) {
-    if (e instanceof AxiosError) {
-      // if error is 401, then throw a JWErrorAuthenticationRequired
-      if (e.response && e.response.status === 401) {
-        throw new JWErrorAuthenticationRequired("quthentication required");
-      }
-      // if error is 403, then throw a JWErrorForbidden
-      if (e.response && e.response.status === 403) {
-        throw new JWErrorForbidden("Forbidden");
-      }
-      // if error is 400, then throw a JWErrorBadRequest
-      if (e.response && e.response.status === 400) {
-        throw new JWErrorBadRequest("bad request");
-      }
-    }
-
-    throw new JWError((e as Error).message);
+    return throwError(e);
   }
 };
 
@@ -97,27 +86,51 @@ export const GenererateSecondaryToken = async (request: SecondaryTokenRequest): 
   const api = new APITokens(config);
 
   try {
-    const response = await api.createSecondaryToken(input);
+    const headers = GetHeaders();
+    const response = await api.createSecondaryToken(input, { headers });
     return {
       request: request,
       token: response.data.token || "",
     };
   } catch (e) {
-    if (e instanceof AxiosError) {
-      // if error is 401, then throw a JWErrorAuthenticationRequired
-      if (e.response && e.response.status === 401) {
-        throw new JWErrorAuthenticationRequired("quthentication required");
-      }
-      // if error is 403, then throw a JWErrorForbidden
-      if (e.response && e.response.status === 403) {
-        throw new JWErrorForbidden("Forbidden");
-      }
-      // if error is 400, then throw a JWErrorBadRequest
-      if (e.response && e.response.status === 400) {
-        throw new JWErrorBadRequest("bad request");
-      }
-    }
-
-    throw new JWError((e as Error).message);
+    return throwError(e);
   }
+};
+
+const throwError = (e: any) => {
+  if (e instanceof AxiosError) {
+    // if error is 400, then throw a JWErrorBadRequest
+    if (e.response && e.response.status === 400) {
+      throw new JWErrorBadRequest("bad request");
+    }
+    // if error is 401, then throw a JWErrorAuthenticationRequired
+    if (e.response && e.response.status === 401) {
+      throw new JWErrorAuthenticationRequired("authentication required");
+    }
+    // if error is 403, then throw a JWErrorForbidden
+    if (e.response && e.response.status === 403) {
+      throw new JWErrorForbidden("forbidden");
+    }
+    // if error is 404, then throw a JWErrorNotFound
+    if (e.response && e.response.status === 404) {
+      throw new JWErrorNotFound("not found");
+    }
+    // if error is 5xx, then throw a JWErrorServerError
+    if (e.response && e.response.status >= 500) {
+      throw new JWErrorServerError("server error");
+    }
+  }
+
+  throw new JWError((e as Error).message);
+};
+
+const GetHeaders = (): RawAxiosRequestHeaders => {
+  const headers: RawAxiosRequestHeaders = {};
+  const authToken = GetAuthToken();
+
+  if (authToken.token !== null) {
+    headers.Authorization = authToken.token;
+  }
+
+  return headers;
 };

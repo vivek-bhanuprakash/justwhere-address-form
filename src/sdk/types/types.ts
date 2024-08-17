@@ -50,6 +50,13 @@ export class JWErrorForbidden extends JWError {
   }
 }
 
+export class JWErrorNotFound extends JWError {
+  constructor(message: string) {
+    super(message);
+    this.name = "JWErrorNotFound";
+  }
+}
+
 export class JWErrorBadRequest extends JWError {
   constructor(message: string) {
     super(message);
@@ -57,6 +64,29 @@ export class JWErrorBadRequest extends JWError {
   }
 }
 
+export class JWErrorServerError extends JWError {
+  constructor(message: string) {
+    super(message);
+    this.name = "JWErrorServerError";
+  }
+}
+
 export const IsUuid = (id: string): boolean => {
   return ID_PATTERN.test(id);
+};
+
+const TOKEN_STORAGE_KEY: string = "JWAUTH";
+
+export interface AuthToken {
+  token: string;
+}
+
+export const UseAuthToken = (authToken: AuthToken) => {
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, authToken.token);
+};
+
+export const GetAuthToken = (): AuthToken => {
+  return {
+    token: sessionStorage.getItem(TOKEN_STORAGE_KEY) || "",
+  };
 };
