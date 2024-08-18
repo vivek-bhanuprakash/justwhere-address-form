@@ -1,16 +1,24 @@
-import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
 import {
+  Address,
   CurrentUserInfoRequest,
   CurrentUserInfoResponse,
   GenereratePrimaryToken,
   GenererateSecondaryToken,
+  GetAddressUsingOwnerToken,
+  GetAddressUsingPrimaryToken,
+  GetAddressUsingSecondaryToken,
   GetCurrentUserInfo,
+  JWError,
+  JWErrorBadRequest,
+  JWErrorForbidden,
+  OwnerTokenAddressRequest,
+  PrimaryTokenAddressRequest,
   PrimaryTokenRequest,
   PrimaryTokenResponse,
+  SecondaryTokenAddressRequest,
   SecondaryTokenRequest,
 } from "../sdk";
-import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
 import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
@@ -32,44 +40,6 @@ const Label: React.FC<LabelProps> = (props: LabelProps) => {
       {props.children}
     </label>
   );
-};
-
-const getAddressUsingProviderToken = async (hostport: string, addressID: string, providerID: string, token: string): Promise<AddressInput> => {
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
-    basePath: `${hostport}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APIIndividuals(config);
-
-  const response = await api.getAddressByID(addressID, token, providerID, undefined, {
-    headers: {
-      Authorization: sessionStorage.getItem("JWAUTH"),
-    },
-  });
-  const address = response.data || null;
-  return address;
-};
-
-const getSelfAddress = async (hostport: string, addressID: string, individualID: string): Promise<AddressInput> => {
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
-    basePath: `${hostport}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APIIndividuals(config);
-
-  const response = await api.getAddressByID(addressID, "", "", individualID, {
-    headers: {
-      Authorization: sessionStorage.getItem("JWAUTH"),
-    },
-  });
-  const address = response.data || null;
-  return address;
 };
 
 const setPrimaryTokenResponse = (onNewPrimaryToken: Function, individualID: string, addressID: string, serviceProviderID: string, token: string) => {
@@ -115,35 +85,12 @@ const getUserType = (userInfo: CurrentUserInfoResponse, individualID: string): U
 // Source: https://melvingeorge.me/blog/check-if-string-valid-uuid-regex-javascript
 export const JW_ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
 
-export class JWError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWError";
-  }
-}
-
 export class JWErrorAuthenticationRequired extends JWError {
   constructor(message: string) {
     super(message);
     this.name = "JWErrorAuthenticationRequired";
   }
 }
-
-export class JWErrorForbidden extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorForbidden";
-  }
-}
-
-export class JWErrorBadRequest extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorBadRequest";
-  }
-}
-
-type ErrorType = JWErrorAuthenticationRequired | JWErrorForbidden | JWErrorBadRequest | JWError;
 
 export interface UserInfo {
   userID: string;
@@ -177,7 +124,8 @@ const JWAddressForm: React.FC<AddressProps> = ({
   onNewPrimaryToken,
   onNewSecondaryToken,
 }) => {
-  const [address, setAddress] = useState<AddressInput>();
+  // const [address, setAddress] = useState<AddressInput>();
+  const [address, setAddress] = useState<Address>();
   const [userType, setUserType] = useState<UserType>(UserType.Unknown);
   const [addressValidity, setAddressValidity] = useState<AddressValidity>(AddressValidity.Unknown);
 
@@ -234,65 +182,76 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
   const onViewAddressWithSecondaryToken = async () => {
     try {
-      const address = await getAddressUsingProviderToken(hostport, addressID || "", beneficiaryID || "", secondaryToken || "");
-      setAddress(address);
-    } catch (e) {
-      if (e instanceof AxiosError) {
-        if (onError === undefined || typeof onError !== "function") {
-          console.warn("JustWhere: onError function is undefined or not a function");
-          return;
-        }
+      const request: SecondaryTokenAddressRequest = {
+        hostPort: hostport,
+        addressID: addressID || "",
+        beneficiaryID: beneficiaryID || "",
+        token: secondaryToken || "",
+      };
 
-        // if error is 401, then throw a JWErrorAuthenticationRequired
-        if (e.response && e.response.status === 401) {
-          onError(new JWErrorAuthenticationRequired("Authentication required"));
-        }
-        // if error is 403, then throw a JWErrorForbidden
-        if (e.response && e.response.status === 403) {
-          onError(new JWErrorForbidden("Forbidden"));
-        }
-        // if error is 400, then throw a JWErrorBadRequest
-        if (e.response && e.response.status === 400) {
-          onError(new JWErrorBadRequest("Bad request"));
-        }
+      const response = await GetAddressUsingSecondaryToken(request);
+      setAddress(response.address);
+    } catch (e) {
+      if (onError === undefined || typeof onError !== "function") {
+        console.warn("JustWhere: onError function is undefined or not a function");
+        console.error("JustWhere: error fetching address using secondary token: ", e);
+        return;
       }
+      return onError(e as JWError);
     }
   };
 
   const onViewAddressWithPrimaryToken = async () => {
     try {
-      const address = await getAddressUsingProviderToken(hostport, addressID || "", serviceProviderID || "", primaryToken || "");
+      const request: PrimaryTokenAddressRequest = {
+        hostPort: hostport,
+        addressID: addressID || "",
+        serviceProviderID: serviceProviderID || "",
+        token: primaryToken || "",
+      };
 
-      address.addressee = address.addressee === undefined ? "Hidden" : address.addressee.trim().length === 0 ? "Hidden" : address.addressee;
-      address.street = address.street === undefined ? "Hidden" : address.street.trim().length === 0 ? "Hidden" : address.street;
-      address.city = address.city === undefined ? "Hidden" : address.city.trim().length === 0 ? "Hidden" : address.city;
-      address.state = address.state === undefined ? "Hidden" : address.state.trim().length === 0 ? "Hidden" : address.state;
-      address.zipCode = address.zipCode === undefined ? "Hidden" : address.zipCode.trim().length === 0 ? "Hidden" : address.zipCode;
-      address.country = address.country === undefined ? "Hidden" : address.country.trim().length === 0 ? "Hidden" : address.country;
-      address.email = address.email === undefined ? "Hidden" : address.email.trim().length === 0 ? "Hidden" : address.email;
-      address.phone = address.phone === undefined ? "Hidden" : address.phone.trim().length === 0 ? "Hidden" : address.phone;
+      const response = await GetAddressUsingPrimaryToken(request);
+      const address = response.address;
 
+      address.Label = address.Label === undefined ? "Hidden" : address.Label.trim().length === 0 ? "Hidden" : address.Label;
+      address.Name = address.Name === undefined ? "Hidden" : address.Name.trim().length === 0 ? "Hidden" : address.Name;
+      address.Street1 = address.Street1 === undefined ? "Hidden" : address.Street1.trim().length === 0 ? "Hidden" : address.Street1;
+      address.Street2 = address.Street2 === undefined ? "Hidden" : address.Street2.trim().length === 0 ? "Hidden" : address.Street2;
+      address.Street3 = address.Street3 === undefined ? "Hidden" : address.Street3.trim().length === 0 ? "Hidden" : address.Street3;
+      address.City = address.City === undefined ? "Hidden" : address.City.trim().length === 0 ? "Hidden" : address.City;
+      address.State = address.State === undefined ? "Hidden" : address.State.trim().length === 0 ? "Hidden" : address.State;
+      address.PostCode = address.PostCode === undefined ? "Hidden" : address.PostCode.trim().length === 0 ? "Hidden" : address.PostCode;
+      address.Country = address.Country === undefined ? "Hidden" : address.Country.trim().length === 0 ? "Hidden" : address.Country;
+      address.Phone = address.Phone === undefined ? "Hidden" : address.Phone.trim().length === 0 ? "Hidden" : address.Phone;
+      address.Email = address.Email === undefined ? "Hidden" : address.Email.trim().length === 0 ? "Hidden" : address.Email;
       setAddress(address);
     } catch (e) {
-      if (e instanceof AxiosError) {
-        if (onError === undefined || typeof onError !== "function") {
-          console.warn("JustWhere: onError function is undefined or not a function");
-          return;
-        }
-
-        // if error is 401, then throw a JWErrorAuthenticationRequired
-        if (e.response && e.response.status === 401) {
-          return onError(new JWErrorAuthenticationRequired("Authentication required"));
-        }
-        // if error is 403, then throw a JWErrorForbidden
-        if (e.response && e.response.status === 403) {
-          return onError(new JWErrorForbidden("Forbidden"));
-        }
-        // if error is 400, then throw a JWErrorBadRequest
-        if (e.response && e.response.status === 400) {
-          return onError(new JWErrorBadRequest("Bad request"));
-        }
+      if (onError === undefined || typeof onError !== "function") {
+        console.warn("JustWhere: onError function is undefined or not a function");
+        console.error("JustWhere: error fetching address using primary token: ", e);
+        return;
       }
+      return onError(e as JWError);
+    }
+  };
+
+  const onViewSelfAddress = async () => {
+    try {
+      clearAddress();
+      const request: OwnerTokenAddressRequest = {
+        hostPort: hostport,
+        individualID: individualID,
+        addressID: addressID || "",
+      };
+      const response = await GetAddressUsingOwnerToken(request);
+      setAddress(response.address);
+    } catch (e) {
+      if (onError === undefined || typeof onError !== "function") {
+        console.warn("JustWhere: onError function is undefined or not a function");
+        console.error("JustWhere: error generating primary token: ", e);
+        return;
+      }
+      return onError(e as JWError);
     }
   };
 
@@ -313,25 +272,12 @@ const JWAddressForm: React.FC<AddressProps> = ({
       const response = await GenererateSecondaryToken(request);
       setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", response.token);
     } catch (e) {
-      if (e instanceof AxiosError) {
-        if (onError === undefined || typeof onError !== "function") {
-          console.warn("JustWhere: onError function is undefined or not a function");
-          return;
-        }
-
-        // if error is 401, then throw a JWErrorAuthenticationRequired
-        if (e.response && e.response.status === 401) {
-          return onError(new JWErrorAuthenticationRequired("Authentication required"));
-        }
-        // if error is 403, then throw a JWErrorForbidden
-        if (e.response && e.response.status === 403) {
-          return onError(new JWErrorForbidden("Forbidden"));
-        }
-        // if error is 400, then throw a JWErrorBadRequest
-        if (e.response && e.response.status === 400) {
-          return onError(new JWErrorBadRequest("Bad request"));
-        }
+      if (onError === undefined || typeof onError !== "function") {
+        console.warn("JustWhere: onError function is undefined or not a function");
+        console.error("JustWhere: error generating secondary token: ", e);
+        return;
       }
+      return onError(e as JWError);
     }
   };
 
@@ -352,70 +298,32 @@ const JWAddressForm: React.FC<AddressProps> = ({
       const response: PrimaryTokenResponse = await GenereratePrimaryToken(request);
       setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", response.token);
     } catch (e) {
-      if (e instanceof AxiosError) {
-        if (onError === undefined || typeof onError !== "function") {
-          console.warn("JustWhere: onError function is undefined or not a function");
-          return;
-        }
-
-        // if error is 401, then throw a JWErrorAuthenticationRequired
-        if (e.response && e.response.status === 401) {
-          return onError(new JWErrorAuthenticationRequired("Authentication required"));
-        }
-        // if error is 403, then throw a JWErrorForbidden
-        if (e.response && e.response.status === 403) {
-          return onError(new JWErrorForbidden("Forbidden"));
-        }
-        // if error is 400, then throw a JWErrorBadRequest
-        if (e.response && e.response.status === 400) {
-          return onError(new JWErrorBadRequest("Bad request"));
-        }
+      if (onError === undefined || typeof onError !== "function") {
+        console.warn("JustWhere: onError function is undefined or not a function");
+        console.error("JustWhere: error generating primary token: ", e);
+        return;
       }
+      return onError(e as JWError);
     }
   };
 
   const clearAddress = () => {
-    const empty: AddressInput = {
-      id: "",
-      individualId: "",
-      street: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "",
-      addressee: "",
-      phone: "",
-      email: "",
+    const empty: Address = {
+      ID: "",
+      IndividualID: "",
+      Street1: "",
+      Street2: "",
+      Street3: "",
+      City: "",
+      State: "",
+      PostCode: "",
+      Country: "",
+      Name: "",
+      Label: "",
+      Phone: "",
+      Email: "",
     };
     setAddress(empty);
-  };
-
-  const onViewSelfAddress = async () => {
-    try {
-      clearAddress();
-      const address = await getSelfAddress(hostport, addressID || "", individualID);
-      setAddress(address);
-    } catch (e) {
-      if (e instanceof AxiosError) {
-        if (onError === undefined || typeof onError !== "function") {
-          console.warn("JustWhere: onError function is undefined or not a function");
-          return;
-        }
-
-        // if error is 401, then throw a JWErrorAuthenticationRequired
-        if (e.response && e.response.status === 401) {
-          return onError(new JWErrorAuthenticationRequired("Authentication required"));
-        }
-        // if error is 403, then throw a JWErrorForbidden
-        if (e.response && e.response.status === 403) {
-          return onError(new JWErrorForbidden("Forbidden"));
-        }
-        // if error is 400, then throw a JWErrorBadRequest
-        if (e.response && e.response.status === 400) {
-          return onError(new JWErrorBadRequest("Bad request"));
-        }
-      }
-    }
   };
 
   const onEditAddress = () => {};
@@ -447,17 +355,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
           return;
         }
 
-        if (!(e instanceof AxiosError)) return onError(new JWError((e as Error).message));
-
-        if (!e.response) return onError(new JWError((e as Error).message));
-
-        if (e.response.status === 401) return onError(new JWErrorAuthenticationRequired("authentication required"));
-
-        if (e.response.status === 403) return onError(new JWErrorForbidden("forbidden"));
-
-        if (e.response.status === 400) return onError(new JWErrorBadRequest("Bad request"));
-
-        onError(new JWError((e as AxiosError).message));
+        return onError(e as JWError);
       }
     };
 
@@ -495,33 +393,28 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
       try {
         clearAddress();
-        const address = await getSelfAddress(hostport, addressID, individualID);
+        const request: OwnerTokenAddressRequest = { hostPort: hostport, addressID: addressID || "", individualID: individualID || "" };
+        await GetAddressUsingOwnerToken(request);
         setAddressValidity(AddressValidity.Self);
         await onViewSelfAddress();
       } catch (e) {
+        if (e instanceof JWErrorBadRequest) {
+          setAddressValidity(AddressValidity.Other);
+          return;
+        }
+
+        if (e instanceof JWErrorForbidden) {
+          setAddressValidity(AddressValidity.Other);
+          return;
+        }
+
         if (onError === undefined || typeof onError !== "function") {
           console.warn("JWAddress: no onError handler provided, or onError is not a function");
           console.error(e);
           return;
         }
 
-        if (!(e instanceof AxiosError)) return onError(new JWError((e as Error).message));
-
-        if (!e.response) return onError(new JWError((e as Error).message));
-
-        if (e.response.status === 401) return onError(new JWErrorAuthenticationRequired("authentication required"));
-
-        if (e.response.status === 403) {
-          setAddressValidity(AddressValidity.Other);
-          return;
-        }
-
-        if (e.response.status === 400) {
-          setAddressValidity(AddressValidity.Other);
-          return;
-        }
-
-        onError(new JWError((e as AxiosError).message));
+        onError(e as JWError);
       }
     };
 
@@ -707,44 +600,44 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
         <div>
           <Label htmlFor="address-name">Name</Label>
-          <Input id="address-name" value={address?.addressee} />
+          <Input id="address-name" value={address?.Name} />
         </div>
 
         <div>
           <Label htmlFor="address-street1">Street</Label>
-          <Input id="address-street1" value={address?.street} />
+          <Input id="address-street1" value={address?.Street1} />
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
             <Label htmlFor="address-city">City</Label>
-            <Input id="address-city" value={address?.city} />
+            <Input id="address-city" value={address?.City} />
           </div>
           <div>
             <Label htmlFor="address-state">State</Label>
-            <Input id="address-state" value={address?.state} />
+            <Input id="address-state" value={address?.State} />
           </div>
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
             <Label htmlFor="address-zipcode">Post Code</Label>
-            <Input id="address-zipcode" value={address?.zipCode} />
+            <Input id="address-zipcode" value={address?.PostCode} />
           </div>
           <div>
             <Label htmlFor="address-country">Country</Label>
-            <Input id="address-country" value={address?.country} />
+            <Input id="address-country" value={address?.Country} />
           </div>
         </div>
 
         <div className="@xs/address-content:grid-cols-2 grid gap-3">
           <div>
             <Label htmlFor="address-phone">Phone</Label>
-            <Input type="tel" id="address-phone" value={address?.phone} />
+            <Input type="tel" id="address-phone" value={address?.Phone} />
           </div>
           <div>
             <Label htmlFor="address-email">Email</Label>
-            <Input type="email" id="address-email" value={address?.email} />
+            <Input type="email" id="address-email" value={address?.Email} />
           </div>
         </div>
 
