@@ -276,7 +276,7 @@ const BenPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  id="firstName"
+                  id="individualID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
                   value={individualID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}

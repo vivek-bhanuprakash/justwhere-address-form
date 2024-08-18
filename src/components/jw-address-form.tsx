@@ -1,7 +1,16 @@
 import { AxiosError } from "axios";
 import React, { useEffect, useState } from "react";
-import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals, GetCurrentUserInfo200Response } from "./../apis/individuals";
-import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "./../apis/tokens";
+import {
+  CurrentUserInfoRequest,
+  CurrentUserInfoResponse,
+  GenereratePrimaryToken,
+  GenererateSecondaryToken,
+  GetCurrentUserInfo,
+  PrimaryTokenRequest,
+  PrimaryTokenResponse,
+  SecondaryTokenRequest,
+} from "../sdk";
+import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
 import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
@@ -23,56 +32,6 @@ const Label: React.FC<LabelProps> = (props: LabelProps) => {
       {props.children}
     </label>
   );
-};
-
-const genereratePrimaryToken = async (hostport: string, individualID: string, addressID: string, serviceProviderID: string): Promise<string> => {
-  const input: PrimaryTokenInput = {
-    individualID: individualID,
-    addressID: addressID,
-    serviceProviderID: serviceProviderID,
-  };
-
-  const config: APITokensConfig = new APITokensConfig({
-    basePath: `${hostport}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APITokens(config);
-
-  const response = await api.createPrimaryToken(input, {
-    headers: {
-      Authorization: sessionStorage.getItem("JWAUTH"),
-    },
-  });
-  const token = response.data.token || "";
-  return token;
-};
-
-const genererateSecondaryToken = async (hostport: string, serviceProviderID: string, beneficiaryID: string, primaryToken: string): Promise<string> => {
-  const input: SecondaryTokenInput = {
-    serviceProviderID: serviceProviderID,
-    beneficiaryID: beneficiaryID,
-    token: primaryToken,
-  };
-
-  const config: APITokensConfig = new APITokensConfig({
-    basePath: `${hostport}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APITokens(config);
-
-  const response = await api.createSecondaryToken(input, {
-    headers: {
-      Authorization: sessionStorage.getItem("JWAUTH"),
-    },
-  });
-  const token = response.data.token || "";
-  return token;
 };
 
 const getAddressUsingProviderToken = async (hostport: string, addressID: string, providerID: string, token: string): Promise<AddressInput> => {
@@ -138,29 +97,11 @@ enum AddressValidity {
   Other,
 }
 
-const getCurrentUserInfo = async (hostport: string): Promise<GetCurrentUserInfo200Response> => {
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
-    basePath: `${hostport}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-  });
-
-  const api = new APIIndividuals(config);
-
-  const response = await api.getCurrentUserInfo({
-    headers: {
-      Authorization: sessionStorage.getItem("JWAUTH"),
-    },
-  });
-  return response.data || null;
-};
-
-const getUserType = (userInfo: GetCurrentUserInfo200Response, individualID: string): UserType => {
+const getUserType = (userInfo: CurrentUserInfoResponse, individualID: string): UserType => {
   if (userInfo !== null) {
-    if (userInfo.IndividualID === undefined || userInfo.IndividualID.trim().length === 0) return UserType.Unknown;
+    if (userInfo.individualID === undefined || userInfo.individualID.trim().length === 0) return UserType.Unknown;
 
-    if (userInfo.IndividualID === individualID) {
+    if (userInfo.individualID === individualID) {
       return UserType.Self;
     }
 
@@ -362,8 +303,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
         return;
       }
 
-      const token = await genererateSecondaryToken(hostport, serviceProviderID || "", beneficiaryID || "", primaryToken || "");
-      setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", token);
+      const request: SecondaryTokenRequest = {
+        hostPort: hostport,
+        serviceProviderID: serviceProviderID || "",
+        beneficiaryID: beneficiaryID || "",
+        token: primaryToken || "",
+      };
+
+      const response = await GenererateSecondaryToken(request);
+      setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", response.token);
     } catch (e) {
       if (e instanceof AxiosError) {
         if (onError === undefined || typeof onError !== "function") {
@@ -394,8 +342,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
         return;
       }
 
-      const token = await genereratePrimaryToken(hostport, individualID, addressID || "", serviceProviderID || "");
-      setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", token);
+      const request: PrimaryTokenRequest = {
+        hostPort: hostport,
+        individualID: individualID,
+        addressID: addressID || "",
+        serviceProviderID: serviceProviderID || "",
+      };
+
+      const response: PrimaryTokenResponse = await GenereratePrimaryToken(request);
+      setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", response.token);
     } catch (e) {
       if (e instanceof AxiosError) {
         if (onError === undefined || typeof onError !== "function") {
@@ -481,8 +436,9 @@ const JWAddressForm: React.FC<AddressProps> = ({
       if (individualID.trim().length === 0) return;
 
       try {
-        const userInfo = await getCurrentUserInfo(hostport);
-        const userType: UserType = getUserType(userInfo, individualID);
+        const request: CurrentUserInfoRequest = { hostPort: hostport };
+        const response = await GetCurrentUserInfo(request);
+        const userType: UserType = getUserType(response, individualID);
         setUserType(userType);
       } catch (e) {
         if (onError === undefined || typeof onError !== "function") {
