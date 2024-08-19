@@ -137,49 +137,6 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const [showViewAddressPrimaryToken, setShowViewAddressPrimaryToken] = useState<boolean>(false);
   const [showViewAddressSecondaryToken, setShowViewAddressSecondaryToken] = useState<boolean>(false);
 
-  // const WATCHDOG_MAX_RETRIES = 29;
-  // const WATCHDOG_INTERVAL = 2000; // 2 seconds
-
-  // let watchDogTimerID: number;
-  // let watchDogRetries: number = 0;
-
-  // const loginWatchDog = async () => {
-  //   console.log("loginWatchDog #", watchDogRetries + 1);
-  //   if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-  //     clearTimeout(watchDogTimerID);
-  //   }
-
-  //   const userInfo = await getCurrentUserInfo(hostport);
-  //   const userType: UserType = getUserType(userInfo, individualID);
-  //   setUserType(userType);
-  //   if (userType === UserType.Unknown) {
-  //     watchDogRetries++;
-  //     if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
-  //       watchDogTimerID = window.setTimeout(async () => {
-  //         await loginWatchDog();
-  //       }, WATCHDOG_INTERVAL);
-  //     }
-  //   } else {
-  //     watchDogRetries = 0;
-  //   }
-  // };
-
-  // const onLogin = async () => {
-  //   if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-  //     clearTimeout(watchDogTimerID);
-  //   }
-
-  //   const userInfo = await getCurrentUserInfo(hostport);
-  //   const userType: UserType = getUserType(userInfo, individualID);
-
-  //   setUserType(userType);
-  //   if (userType === UserType.Unknown) {
-  //     window.open(`${hostport}/api/login`, "_blank");
-  //     watchDogRetries = 0;
-  //     watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
-  //   }
-  // };
-
   const onViewAddressWithSecondaryToken = async () => {
     try {
       const request: SecondaryTokenAddressRequest = {
