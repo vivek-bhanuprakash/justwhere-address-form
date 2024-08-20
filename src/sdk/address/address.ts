@@ -200,7 +200,7 @@ export const IsLoggedIn = async (hostPort: string): Promise<boolean> => {
     return u.userID.trim().length > 0 && u.individualID.trim().length > 0;
   } catch (e) {
     if (e instanceof JWAuthenticationRequired) return false;
-    throw e;
+    return throwError(e);
   }
 };
 

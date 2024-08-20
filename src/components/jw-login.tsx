@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
+import { CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, JWError, UserID } from "../sdk";
 import { ID, OnErrorFcn } from "./jw-address";
 
 // Source: https://stackoverflow.com/questions/53446020/how-to-compare-oldvalues-and-newvalues-on-react-hooks-useeffect
@@ -11,93 +11,56 @@ const usePrevious = <T extends unknown>(value: T): T | undefined => {
   return ref.current;
 };
 
-export const LOGIN_MAX_RETRIES = 29;
-export const LOGIN_CHECK_INTERVAL = 2000;
-
 export type OnLoginComplete = (userID: string, individualID: ID) => void;
 
 interface JWLoginProps {
   hostPort: string;
   onLoginComplete: OnLoginComplete;
   onError?: OnErrorFcn;
-
-  retries?: number;
-  interval?: number;
 }
 
-const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, retries, interval }) => {
-  const prevHostPort = usePrevious(hostPort);
-
-  let WATCHDOG_MAX_RETRIES = retries || LOGIN_MAX_RETRIES;
-  let WATCHDOG_INTERVAL = interval || LOGIN_CHECK_INTERVAL; // 2 seconds
-
-  let watchDogTimerID: number;
-  let watchDogRetries: number = 0;
-
-  const loginWatchDog = async () => {
-    console.info("JWLogin: WatchDog retry #", watchDogRetries + 1);
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
-    }
-
-    const config: APIIndividualsConfig = new APIIndividualsConfig({
-      basePath: `${hostPort}/api`,
-      baseOptions: {
-        withCredentials: true,
-      },
-    });
-
-    const api = new APIIndividuals(config);
-
-    const response = await api.getCurrentUserInfo();
-    const userInfo = response.data || null;
-    if (userInfo !== null) {
-      if (typeof userInfo.IndividualID === "string" && userInfo.IndividualID.length > 0) {
-        return onLoginComplete(userInfo.UserID || "", userInfo.IndividualID || "");
-      }
-    }
-
-    watchDogRetries++;
-    if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
-      watchDogTimerID = window.setTimeout(async () => {
-        await loginWatchDog();
-      }, WATCHDOG_INTERVAL);
-    } else {
-      watchDogRetries = 0;
-    }
-  };
-
+const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError }) => {
   const onLogin = async () => {
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
-    }
-
-    // window.open(`${hostPort}/api/login`, "_blank");
-    // watchDogRetries = 0;
-    // watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
-
     window.open(`${hostPort}/api/login`, "_top");
   };
 
-  useEffect(() => {
-    let checkInProgress: boolean = false;
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      checkInProgress = true;
-      console.info("JWLogin: Login was in progress.  It will be interrupted and retried.");
-      clearTimeout(watchDogTimerID);
-    }
-
-    console.info("JWLogin: WatchDog retries:", WATCHDOG_MAX_RETRIES, ", interval:", WATCHDOG_INTERVAL);
-    console.info("JWLogin: Host previous:", prevHostPort, ", current:", hostPort);
-
-    if (checkInProgress) {
-      if (prevHostPort !== hostPort) {
-        onLogin();
-        return;
+  const errorHandler = (e: JWError) => {
+    if (onError !== null && onError !== undefined) {
+      if (typeof onError === "function") {
+        onError(e);
       } else {
-        loginWatchDog();
+        console.error("JustWhere: error handler must be a function. it is ", typeof onError);
       }
+    } else {
+      console.warn("JustWhere: no error handler provided");
     }
+  };
+
+  const loginHandler = (userID: UserID, individualID: IndividualID) => {
+    if (onLoginComplete !== null && onLoginComplete !== undefined) {
+      if (typeof onLoginComplete === "function") {
+        onLoginComplete(userID, individualID);
+      } else {
+        console.error("JustWhere: login complete handler must be a function. it is ", typeof onLoginComplete);
+        errorHandler(new JWError("login complete handler must be a function"));
+      }
+    } else {
+      console.warn("JustWhere: no login complete handler provided");
+    }
+  };
+
+  useEffect(() => {
+    const fnEffect = async () => {
+      try {
+        const request: CurrentUserInfoRequest = { hostPort: hostPort };
+        const response = await GetCurrentUserInfo(request);
+        loginHandler(response.userID, response.individualID);
+      } catch (e) {
+        errorHandler(e as JWError);
+      }
+    };
+
+    fnEffect();
   }, [hostPort]);
 
   return (
