@@ -1,4 +1,4 @@
-import { UserID } from "../../sdk";
+import { UserID } from "../../util";
 
 export interface HeaderProps {
   hostPort: string;

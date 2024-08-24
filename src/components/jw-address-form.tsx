@@ -18,7 +18,7 @@ import {
   PrimaryTokenResponse,
   SecondaryTokenAddressRequest,
   SecondaryTokenRequest,
-} from "../sdk";
+} from "../util";
 import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./jw-address";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;

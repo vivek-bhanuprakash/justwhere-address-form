@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, JWError, UserID } from "../sdk";
+import { CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, JWError, UserID } from "../util";
 import { ID, OnErrorFcn } from "./jw-address";
 
 // Source: https://stackoverflow.com/questions/53446020/how-to-compare-oldvalues-and-newvalues-on-react-hooks-useeffect

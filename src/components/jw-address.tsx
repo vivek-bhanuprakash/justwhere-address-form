@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CurrentUserInfoRequest, GetCurrentUserInfo } from "../sdk";
+import { CurrentUserInfoRequest, GetCurrentUserInfo } from "../util";
 import JWAddressForm, { JWErrorAuthenticationRequired, UserInfo } from "./jw-address-form";
 import JWLogin, { OnLoginComplete } from "./jw-login";
 
