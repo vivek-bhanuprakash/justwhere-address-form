@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import JWAddress, { EmbedMode } from "./components/jw-address";
+import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, ServiceProviderID } from "./util";
 
 enum UserType {
   Unknown,
@@ -71,11 +72,24 @@ const BenPage: React.FC = () => {
     setActiveData(d);
   };
 
-  const onNewPrimaryToken = (token: string) => {
+  const onNewPrimaryToken = (individualID: IndividualID, addressID: AddressID, serviceProviderID: ServiceProviderID, token: PrimaryToken) => {
+    setIndividualID(individualID);
+    setAddressID(addressID);
+    setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
-  const onNewSecondaryToken = (token: string) => {
+  const onNewSecondaryToken = (
+    individualID: IndividualID,
+    addressID: AddressID,
+    serviceProviderID: ServiceProviderID,
+    beneficiaryID: BeneficiaryID,
+    token: SecondaryToken,
+  ) => {
+    setIndividualID(individualID);
+    setAddressID(addressID);
+    setServiceProviderID(serviceProviderID);
+    setBeneficiaryID(beneficiaryID);
     setSecondaryToken(token);
   };
 
@@ -278,6 +292,7 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="individualID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
+                  readOnly
                   value={individualID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
                 ></input>
@@ -290,6 +305,7 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="addressID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
+                  readOnly
                   value={addressID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
                 ></input>
@@ -309,6 +325,7 @@ const BenPage: React.FC = () => {
                     type="text"
                     id="serviceProviderID"
                     className="w-full rounded-md border px-3 py-2 text-sm font-normal"
+                    readOnly
                     value={serviceProviderID}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}
                   ></input>
@@ -322,6 +339,7 @@ const BenPage: React.FC = () => {
                     id="primaryToken"
                     className="w-full rounded-md border px-3 py-2 text-sm font-light"
                     rows={4}
+                    readOnly
                     value={primaryToken}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}
                   ></textarea>
@@ -342,6 +360,7 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="beneficiaryID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
+                  readOnly
                   value={beneficiaryID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)}
                 ></input>

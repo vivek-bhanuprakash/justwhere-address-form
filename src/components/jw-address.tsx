@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CurrentUserInfoRequest, GetCurrentUserInfo } from "../util";
+import { AddressID, BeneficiaryID, CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, ServiceProviderID } from "../util";
 import JWAddressForm, { JWErrorAuthenticationRequired, UserInfo } from "./jw-address-form";
 import JWLogin, { OnLoginComplete } from "./jw-login";
 
@@ -46,20 +46,20 @@ export class JWErrorBadRequest extends JWError {
 
 export type OnErrorFcn = (err: JWError) => void;
 export type OnNewPrimaryToken = (individualID: ID, addressID: ID, serviceProviderID: ID, token: PrimaryToken) => void;
-export type OnNewSecondaryToken = (serviceProviderID: ID, beneficiaryID: ID, token: SecondaryToken) => void;
+export type OnNewSecondaryToken = (individualID: ID, addressID: ID, serviceProviderID: ID, beneficiaryID: ID, token: SecondaryToken) => void;
 export type OnAuthenticationRequired = (url: string) => void;
 
 export interface JWAddressProps {
   embedAs: EmbedMode;
   hostPort: string;
 
-  individualID?: ID;
-  addressID?: ID;
+  individualID?: IndividualID;
+  addressID?: AddressID;
 
-  serviceProviderID?: ID;
+  serviceProviderID?: ServiceProviderID;
   primaryToken?: PrimaryToken;
 
-  beneficiaryID?: ID;
+  beneficiaryID?: BeneficiaryID;
   secondaryToken?: SecondaryToken;
 
   onAuthenticationRequired?: OnAuthenticationRequired;

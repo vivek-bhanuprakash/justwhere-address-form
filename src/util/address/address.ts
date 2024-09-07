@@ -152,10 +152,12 @@ export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise
   try {
     const response = await api.getIndividualDetails(request.individualID);
     const addresses: Record<AddressID, Address> = {};
-    Object.keys(response.data.addresses || {}).forEach(async (addressID: AddressID) => {
-      const response = await GetAddressUsingOwnerToken({ hostPort: request.hostPort, individualID: request.individualID, addressID: addressID });
-      addresses[response.address.ID] = response.address;
-    });
+    await Promise.all(
+      Object.keys(response.data.addresses || {}).map(async (addressID: AddressID) => {
+        const response = await GetAddressUsingOwnerToken({ hostPort: request.hostPort, individualID: request.individualID, addressID: addressID });
+        addresses[response.address.ID] = response.address;
+      }),
+    );
     return {
       request: request,
       addresses: addresses,

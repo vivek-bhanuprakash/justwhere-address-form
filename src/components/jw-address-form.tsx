@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Address,
+  AddressID,
   CurrentUserInfoRequest,
   CurrentUserInfoResponse,
   GenereratePrimaryToken,
@@ -9,9 +10,11 @@ import {
   GetAddressUsingPrimaryToken,
   GetAddressUsingSecondaryToken,
   GetCurrentUserInfo,
+  GetOwnerAddresses,
   JWError,
   JWErrorBadRequest,
   JWErrorForbidden,
+  OwnerAddressesRequest,
   OwnerTokenAddressRequest,
   PrimaryTokenAddressRequest,
   PrimaryTokenRequest,
@@ -40,18 +43,6 @@ const Label: React.FC<LabelProps> = (props: LabelProps) => {
       {props.children}
     </label>
   );
-};
-
-const setPrimaryTokenResponse = (onNewPrimaryToken: Function, individualID: string, addressID: string, serviceProviderID: string, token: string) => {
-  if (onNewPrimaryToken !== undefined) {
-    onNewPrimaryToken(token);
-  }
-};
-
-const setSecondaryTokenResponse = (onNewSecondaryToken: Function, serviceProviderID: string, beneficiaryID: string, token: string) => {
-  if (onNewSecondaryToken !== undefined) {
-    onNewSecondaryToken(token);
-  }
 };
 
 enum UserType {
@@ -125,6 +116,8 @@ const JWAddressForm: React.FC<AddressProps> = ({
   onNewSecondaryToken,
 }) => {
   // const [address, setAddress] = useState<AddressInput>();
+  const [selectedMyAddress, setSelectedMyAddress] = useState<AddressID>("");
+  const [myAddresses, setMyAddresses] = useState<Record<AddressID, Address>>({});
   const [address, setAddress] = useState<Address>();
   const [userType, setUserType] = useState<UserType>(UserType.Unknown);
   const [addressValidity, setAddressValidity] = useState<AddressValidity>(AddressValidity.Unknown);
@@ -136,6 +129,12 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const [showGenSecondaryToken, setShowGenSecondaryToken] = useState<boolean>(false);
   const [showViewAddressPrimaryToken, setShowViewAddressPrimaryToken] = useState<boolean>(false);
   const [showViewAddressSecondaryToken, setShowViewAddressSecondaryToken] = useState<boolean>(false);
+
+  const onSelectedMyAddressChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    console.info("onSelectedMyAddressChanged: ", event.target.value);
+    setSelectedMyAddress(event.target.value);
+    setAddress(myAddresses[event.target.value]);
+  };
 
   const onViewAddressWithSecondaryToken = async () => {
     try {
@@ -215,7 +214,7 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const onGenerateSecondaryToken = async () => {
     try {
       if (onNewSecondaryToken === undefined || typeof onNewSecondaryToken !== "function") {
-        console.warn("JustWhere: onNewSecondaryToken function is undefined or not a function. no token will be generated.");
+        console.warn("JustWhere: onNewSecondaryToken function is not provided or is not a function. no token will be generated.");
         return;
       }
 
@@ -227,7 +226,12 @@ const JWAddressForm: React.FC<AddressProps> = ({
       };
 
       const response = await GenererateSecondaryToken(request);
-      setSecondaryTokenResponse(onNewSecondaryToken, serviceProviderID || "", beneficiaryID || "", response.token);
+      try {
+        onNewSecondaryToken(individualID, address?.ID || "", request.serviceProviderID, request.beneficiaryID, response.token);
+      } catch (e) {
+        console.error("JustWhere: onNewSecondaryToken callback function threw an error: ", e);
+        return;
+      }
     } catch (e) {
       if (onError === undefined || typeof onError !== "function") {
         console.warn("JustWhere: onError function is undefined or not a function");
@@ -241,19 +245,24 @@ const JWAddressForm: React.FC<AddressProps> = ({
   const onGeneratePrimaryToken = async () => {
     try {
       if (onNewPrimaryToken === undefined || typeof onNewPrimaryToken !== "function") {
-        console.warn("JustWhere: onNewPrimaryToken function is undefined or not a function. no token will be generated.");
+        console.warn("JustWhere: onNewPrimaryToken callback function is not provided or is not a function. no token will be generated.");
         return;
       }
 
       const request: PrimaryTokenRequest = {
         hostPort: hostport,
         individualID: individualID,
-        addressID: addressID || "",
+        addressID: address?.ID || "",
         serviceProviderID: serviceProviderID || "",
       };
 
       const response: PrimaryTokenResponse = await GenereratePrimaryToken(request);
-      setPrimaryTokenResponse(onNewPrimaryToken, individualID, addressID || "", serviceProviderID || "", response.token);
+      try {
+        onNewPrimaryToken(request.individualID, request.addressID, request.serviceProviderID, response.token);
+      } catch (e) {
+        console.error("JustWhere: onNewPrimaryToken callback function threw an error: ", e);
+        return;
+      }
     } catch (e) {
       if (onError === undefined || typeof onError !== "function") {
         console.warn("JustWhere: onError function is undefined or not a function");
@@ -354,6 +363,15 @@ const JWAddressForm: React.FC<AddressProps> = ({
         await GetAddressUsingOwnerToken(request);
         setAddressValidity(AddressValidity.Self);
         await onViewSelfAddress();
+
+        // load owner addresses
+        const req: OwnerAddressesRequest = { hostPort: hostport, individualID: individualID };
+        const response = await GetOwnerAddresses(req);
+        setMyAddresses(response.addresses);
+
+        if (response.addresses[addressID] !== undefined) {
+          setSelectedMyAddress(addressID);
+        }
       } catch (e) {
         if (e instanceof JWErrorBadRequest) {
           setAddressValidity(AddressValidity.Other);
@@ -388,6 +406,14 @@ const JWAddressForm: React.FC<AddressProps> = ({
 
     // setShowEditAddress(true);
     setShowEditAddress(false);
+
+    const fnEffect = async () => {
+      // load owner addresses
+      const request: OwnerAddressesRequest = { hostPort: hostport, individualID: individualID };
+      const response = await GetOwnerAddresses(request);
+      setMyAddresses(response.addresses);
+    };
+    fnEffect();
   }, [userType, addressValidity]);
 
   // visibility of list addresses btn
@@ -550,7 +576,27 @@ const JWAddressForm: React.FC<AddressProps> = ({
           </div>
         </div>
 
-        <div className="mt-2">
+        {userType === UserType.Self ? (
+          <div className="mt-2">
+            <label htmlFor="myaddresses" className="mb-1 block text-xs font-semibold uppercase">
+              My Addresses
+            </label>
+            <select
+              id="myaddresses"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-xs font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              value={selectedMyAddress}
+              onChange={onSelectedMyAddressChanged}
+            >
+              {Object.keys(myAddresses).map((myAddress) => (
+                <option value={myAddress}>{myAddresses[myAddress].Street1}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <></>
+        )}
+
+        <div>
           <Label htmlFor="address-type">Type</Label>
           <Input id="address-type" placeholder="No value here" />
         </div>
