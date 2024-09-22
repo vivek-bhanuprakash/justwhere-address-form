@@ -1,53 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { AddressID, BeneficiaryID, CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, ServiceProviderID } from "../util";
-import JWAddressForm, { JWErrorAuthenticationRequired, UserInfo } from "./jw-address-form";
+import {
+  AddressID,
+  BeneficiaryID,
+  CurrentUserInfoRequest,
+  GetCurrentUserInfo,
+  IndividualID,
+  JWError,
+  JWErrorAuthenticationRequired,
+  PrimaryToken,
+  SecondaryToken,
+  ServiceProviderID,
+} from "../util";
+import { UserInfo } from "./jw-address-form copy";
+import JWAddressFormCustomer from "./jw-address-form-customer";
 import JWLogin, { OnLoginComplete } from "./jw-login";
-
-// Regular expression to check if string is a valid UUID
-// Source: https://melvingeorge.me/blog/check-if-string-valid-uuid-regex-javascript
-export const JW_ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
-
-export enum EmbedMode {
-  SERVICE_PROVIDER,
-  BENEFICIARY,
-}
-
-export type ID = string;
-export type PrimaryToken = string;
-export type SecondaryToken = string;
-
-export class JWError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWError";
-  }
-}
-
-export class JWAuthenticationRequired extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorAuthenticationRequired";
-  }
-}
-
-export class JWErrorForbidden extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorForbidden";
-  }
-}
-
-export class JWErrorBadRequest extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorBadRequest";
-  }
-}
-
-export type OnErrorFcn = (err: JWError) => void;
-export type OnNewPrimaryToken = (individualID: ID, addressID: ID, serviceProviderID: ID, token: PrimaryToken) => void;
-export type OnNewSecondaryToken = (individualID: ID, addressID: ID, serviceProviderID: ID, beneficiaryID: ID, token: SecondaryToken) => void;
-export type OnAuthenticationRequired = (url: string) => void;
+import { EmbedMode, OnAuthenticationRequired, OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./types";
 
 export interface JWAddressProps {
   embedAs: EmbedMode;
@@ -60,6 +27,7 @@ export interface JWAddressProps {
   primaryToken?: PrimaryToken;
 
   beneficiaryID?: BeneficiaryID;
+  beneficiaryIDs?: BeneficiaryID[];
   secondaryToken?: SecondaryToken;
 
   onAuthenticationRequired?: OnAuthenticationRequired;
@@ -76,6 +44,7 @@ const JWAddress: React.FC<JWAddressProps> = ({
   serviceProviderID,
   primaryToken,
   beneficiaryID,
+  beneficiaryIDs,
   secondaryToken,
   onAuthenticationRequired,
   onError,
@@ -90,20 +59,17 @@ const JWAddress: React.FC<JWAddressProps> = ({
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>(emptyUserInfo);
 
-  const onLoginComplete: OnLoginComplete = (userID: string, individualID: ID) => {
+  const onLoginComplete: OnLoginComplete = (userID: string, individualID: IndividualID) => {
     const userInfo: UserInfo = {
       userID: userID,
       individualID: individualID,
     };
-
-    console.info("JWAddress: current user info:", userInfo);
 
     setCurrentUserInfo(userInfo);
     setIsLoggedIn(true);
   };
 
   const onErrorInternal: OnErrorFcn = (err: JWError) => {
-    console.error("JWAddress: onErrorInternal: ", err);
     if (err instanceof JWErrorAuthenticationRequired) {
       const ui: UserInfo = {
         userID: "",
@@ -137,15 +103,16 @@ const JWAddress: React.FC<JWAddressProps> = ({
   return (
     <>
       {isLoggedIn ? (
-        <JWAddressForm
+        <JWAddressFormCustomer
           hostPort={hostPort}
-          userInfo={currentUserInfo}
-          individualID={individualID || ""}
+          authToken={""}
+          // individualID={individualID || ""}
           addressID={addressID}
           serviceProviderID={serviceProviderID}
           primaryToken={primaryToken}
           beneficiaryID={beneficiaryID}
-          secondaryToken={secondaryToken}
+          beneficiaryIDs={beneficiaryIDs}
+          // secondaryToken={secondaryToken}
           onError={onErrorInternal}
           onNewPrimaryToken={onNewPrimaryToken}
           onNewSecondaryToken={onNewSecondaryToken}

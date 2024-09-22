@@ -29,6 +29,32 @@ export interface Address {
   Tags?: Record<string, TagValue>;
 }
 
+interface Provider {
+  Name: string;
+  Contact: string;
+  Description: string;
+  Category: string;
+  Street1: string;
+  Street2?: string;
+  Street3?: string;
+  City: string;
+  State: string;
+  PostCode: string;
+  Country?: string;
+  Phone: string;
+  Email: string;
+  Website?: string;
+  Tags?: object;
+}
+
+export interface Beneficiary extends Provider {
+  ID: BeneficiaryID;
+}
+
+export interface ServiceProvider extends Provider {
+  ID: ServiceProviderID;
+}
+
 export class JWError extends Error {
   constructor(message: string) {
     super(message);
@@ -91,4 +117,15 @@ export const GetAuthToken = (): AuthToken => {
     token = token.split("Bearer ")[1];
   }
   return { token };
+};
+
+export const IsValidURL = (url: string): boolean => {
+  let isValid = false;
+  try {
+    new URL(url);
+    isValid = true;
+  } catch (_) {
+    isValid = false;
+  }
+  return isValid;
 };

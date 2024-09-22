@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, JWError, UserID } from "../util";
-import { ID, OnErrorFcn } from "./jw-address";
+import { OnErrorFcn } from "./types";
 
 // Source: https://stackoverflow.com/questions/53446020/how-to-compare-oldvalues-and-newvalues-on-react-hooks-useeffect
 const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -11,7 +11,7 @@ const usePrevious = <T extends unknown>(value: T): T | undefined => {
   return ref.current;
 };
 
-export type OnLoginComplete = (userID: string, individualID: ID) => void;
+export type OnLoginComplete = (userID: string, individualID: IndividualID) => void;
 
 interface JWLoginProps {
   hostPort: string;

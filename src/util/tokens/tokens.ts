@@ -1,5 +1,5 @@
-import { AxiosError, RawAxiosRequestHeaders } from "axios";
-import { Configuration as APITokensConfig, DefaultApi as APITokens, PrimaryTokenInput, SecondaryTokenInput } from "../internal/sdk/token_management_openapi";
+import { AxiosError } from "axios";
+import { Configuration, PrimaryTokenInput, SecondaryTokenInput, TokenApi } from "../internal/sdk/";
 import {
   AddressID,
   BeneficiaryID,
@@ -18,6 +18,7 @@ import {
 
 export interface PrimaryTokenRequest {
   hostPort: string;
+  authToken?: string;
   individualID: IndividualID;
   addressID: AddressID;
   serviceProviderID: ServiceProviderID;
@@ -35,17 +36,17 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
     serviceProviderID: request.serviceProviderID,
   };
 
-  const authToken = GetAuthToken();
+  const authToken = request.authToken || GetAuthToken().token;
 
-  const config: APITokensConfig = new APITokensConfig({
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APITokens(config);
+  const api = new TokenApi(config);
 
   try {
     const response = await api.createPrimaryToken(input);
@@ -59,8 +60,50 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
   }
 };
 
+export interface DisablePrimaryTokenRequest {
+  hostPort: string;
+  authToken?: string;
+  individualID: IndividualID;
+  addressID: AddressID;
+  serviceProviderID: ServiceProviderID;
+}
+
+export interface DisablePrimaryTokenResponse {
+  request: DisablePrimaryTokenRequest;
+}
+
+export const DisablePrimaryToken = async (request: DisablePrimaryTokenRequest): Promise<DisablePrimaryTokenResponse> => {
+  const input: PrimaryTokenInput = {
+    individualID: request.individualID,
+    addressID: request.addressID,
+    serviceProviderID: request.serviceProviderID,
+  };
+
+  const authToken = request.authToken || GetAuthToken().token;
+
+  const config: Configuration = new Configuration({
+    basePath: `${request.hostPort}/api`,
+    baseOptions: {
+      withCredentials: true,
+    },
+    accessToken: authToken,
+  });
+
+  const api = new TokenApi(config);
+
+  try {
+    await api.disablePrimaryToken(input);
+    return {
+      request: request,
+    };
+  } catch (e) {
+    return throwError(e);
+  }
+};
+
 export interface SecondaryTokenRequest {
   hostPort: string;
+  authToken?: string;
   serviceProviderID: ServiceProviderID;
   beneficiaryID: BeneficiaryID;
   token: PrimaryToken;
@@ -78,23 +121,64 @@ export const GenererateSecondaryToken = async (request: SecondaryTokenRequest): 
     token: request.token,
   };
 
-  const authToken = GetAuthToken();
+  const authToken = request.authToken || GetAuthToken().token;
 
-  const config: APITokensConfig = new APITokensConfig({
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APITokens(config);
+  const api = new TokenApi(config);
 
   try {
     const response = await api.createSecondaryToken(input);
     return {
       request: request,
       token: response.data.token || "",
+    };
+  } catch (e) {
+    return throwError(e);
+  }
+};
+
+export interface DisableSecondaryTokenRequest {
+  hostPort: string;
+  authToken?: string;
+  serviceProviderID: ServiceProviderID;
+  beneficiaryID: BeneficiaryID;
+  secondaryToken: SecondaryToken;
+}
+
+export interface DisableSecondaryTokenResponse {
+  request: DisableSecondaryTokenRequest;
+}
+
+export const DisableSecondaryToken = async (request: DisableSecondaryTokenRequest): Promise<DisableSecondaryTokenResponse> => {
+  const input: SecondaryTokenInput = {
+    serviceProviderID: request.serviceProviderID,
+    beneficiaryID: request.beneficiaryID,
+    token: request.secondaryToken,
+  };
+
+  const authToken = request.authToken || GetAuthToken().token;
+
+  const config: Configuration = new Configuration({
+    basePath: `${request.hostPort}/api`,
+    baseOptions: {
+      withCredentials: true,
+    },
+    accessToken: authToken,
+  });
+
+  const api = new TokenApi(config);
+
+  try {
+    await api.disableSecondaryToken(input);
+    return {
+      request: request,
     };
   } catch (e) {
     return throwError(e);
@@ -126,15 +210,4 @@ const throwError = (e: any) => {
   }
 
   throw new JWError((e as Error).message);
-};
-
-const GetHeaders = (): RawAxiosRequestHeaders => {
-  const headers: RawAxiosRequestHeaders = {};
-  const authToken = GetAuthToken();
-
-  if (authToken.token !== null) {
-    headers.Authorization = authToken.token;
-  }
-
-  return headers;
 };

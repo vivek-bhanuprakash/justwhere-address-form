@@ -1,6 +1,5 @@
-import { AxiosError, RawAxiosRequestHeaders } from "axios";
-import { JWAuthenticationRequired } from "../../components/jw-address";
-import { AddressInput, Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "../internal/sdk/IndividualRestSpec";
+import { AxiosError } from "axios";
+import { AddressApi, AddressInput, Configuration, IndividualApi, UserinfoApi } from "../internal/sdk/";
 import {
   Address,
   AddressID,
@@ -22,6 +21,7 @@ import {
 
 export interface PrimaryTokenAddressRequest {
   hostPort: string;
+  authToken?: string;
   addressID: AddressID;
   serviceProviderID: ServiceProviderID;
   token: PrimaryToken;
@@ -33,16 +33,16 @@ export interface PrimaryTokenAddressResponse {
 }
 
 export const GetAddressUsingPrimaryToken = async (request: PrimaryTokenAddressRequest): Promise<PrimaryTokenAddressResponse> => {
-  const authToken = GetAuthToken();
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
+  const authToken = request.authToken || GetAuthToken().token;
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APIIndividuals(config);
+  const api = new AddressApi(config);
 
   try {
     const response = await api.getAddress(request.addressID, request.token, request.serviceProviderID);
@@ -58,6 +58,7 @@ export const GetAddressUsingPrimaryToken = async (request: PrimaryTokenAddressRe
 
 export interface SecondaryTokenAddressRequest {
   hostPort: string;
+  authToken?: string;
   addressID: AddressID;
   beneficiaryID: BeneficiaryID;
   token: SecondaryToken;
@@ -69,16 +70,16 @@ export interface SecondaryTokenAddressResponse {
 }
 
 export const GetAddressUsingSecondaryToken = async (request: SecondaryTokenAddressRequest): Promise<SecondaryTokenAddressResponse> => {
-  const authToken = GetAuthToken();
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
+  const authToken = request.authToken || GetAuthToken().token;
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APIIndividuals(config);
+  const api = new AddressApi(config);
 
   try {
     const response = await api.getAddress(request.addressID, request.token, request.beneficiaryID);
@@ -94,6 +95,7 @@ export const GetAddressUsingSecondaryToken = async (request: SecondaryTokenAddre
 
 export interface OwnerTokenAddressRequest {
   hostPort: string;
+  authToken?: string;
   individualID: IndividualID;
   addressID: AddressID;
 }
@@ -104,16 +106,16 @@ export interface OwnerTokenAddressResponse {
 }
 
 export const GetAddressUsingOwnerToken = async (request: OwnerTokenAddressRequest): Promise<OwnerTokenAddressResponse> => {
-  const authToken = GetAuthToken();
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
+  const authToken = request.authToken || GetAuthToken().token;
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APIIndividuals(config);
+  const api = new AddressApi(config);
 
   try {
     const response = await api.getAddress(request.addressID, "", "", request.individualID);
@@ -129,6 +131,7 @@ export const GetAddressUsingOwnerToken = async (request: OwnerTokenAddressReques
 
 export interface OwnerAddressesRequest {
   hostPort: string;
+  authToken?: string;
   individualID: IndividualID;
 }
 
@@ -138,16 +141,16 @@ export interface OwnerAddressesResponse {
 }
 
 export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise<OwnerAddressesResponse> => {
-  const authToken = GetAuthToken();
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
+  const authToken = request.authToken || GetAuthToken().token;
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APIIndividuals(config);
+  const api = new IndividualApi(config);
 
   try {
     const response = await api.getIndividualDetails(request.individualID);
@@ -169,6 +172,7 @@ export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise
 
 export interface CurrentUserInfoRequest {
   hostPort: string;
+  authToken?: string;
 }
 
 export interface CurrentUserInfoResponse {
@@ -178,16 +182,16 @@ export interface CurrentUserInfoResponse {
 }
 
 export const GetCurrentUserInfo = async (request: CurrentUserInfoRequest): Promise<CurrentUserInfoResponse> => {
-  const authToken = GetAuthToken();
-  const config: APIIndividualsConfig = new APIIndividualsConfig({
+  const authToken = request.authToken || GetAuthToken().token;
+  const config: Configuration = new Configuration({
     basePath: `${request.hostPort}/api`,
     baseOptions: {
       withCredentials: true,
     },
-    accessToken: authToken.token,
+    accessToken: authToken,
   });
 
-  const api = new APIIndividuals(config);
+  const api = new UserinfoApi(config);
 
   try {
     const response = await api.getUserInfo();
@@ -206,7 +210,7 @@ export const IsLoggedIn = async (hostPort: string): Promise<boolean> => {
     const u = await GetCurrentUserInfo({ hostPort });
     return u.userID.trim().length > 0 && u.individualID.trim().length > 0;
   } catch (e) {
-    if (e instanceof JWAuthenticationRequired) return false;
+    if (e instanceof JWErrorAuthenticationRequired) return false;
     return throwError(e);
   }
 };
@@ -231,7 +235,7 @@ function convertToAddress(input: AddressInput): Address {
   // If tags exist, iterate through them and convert only non-private ones
   const newTags: Record<string, TagValue> = {};
   for (const [tagKey, tag] of Object.entries(input.tags)) {
-    if (tag.Private) continue;
+    // if (tag.Private) continue;
 
     if (tagKey === "atag") output.Label = tag.Name || "";
     else if (tag.Name && tag.Name.trim().length > 0) {
@@ -268,15 +272,4 @@ const throwError = (e: any) => {
   }
 
   throw new JWError((e as Error).message);
-};
-
-const GetHeaders = (): RawAxiosRequestHeaders => {
-  const headers: RawAxiosRequestHeaders = {};
-  const authToken = GetAuthToken();
-
-  if (authToken.token !== null) {
-    headers.Authorization = authToken.token;
-  }
-
-  return headers;
 };

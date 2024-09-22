@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import JWAddress, { EmbedMode } from "./components/jw-address";
+import JWAddress from "./components/jw-address";
+import { EmbedMode, OnNewPrimaryToken, OnNewSecondaryToken } from "./components/types";
 import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, ServiceProviderID } from "./util";
 
 enum UserType {
@@ -18,6 +19,7 @@ interface Data {
   PrimaryToken: string;
   BeneficiaryID: string;
   SecondaryToken: string;
+  PreferredBeneficiaries: string;
 }
 
 const BenPage: React.FC = () => {
@@ -41,6 +43,9 @@ const BenPage: React.FC = () => {
   const [beneficiaryID, setBeneficiaryID] = useState<string>("");
   const [secondaryToken, setSecondaryToken] = useState<string>("");
 
+  const [preferredBeneficiaries, setPreferredBeneficiaries] = useState<BeneficiaryID[]>([]);
+  const [preferredBeneficiariesString, setPreferredBeneficiariesString] = useState<string>("");
+
   // const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
   //   console.error(error);
   //   if (error instanceof JWErrorAuthenticationRequired) {
@@ -60,6 +65,11 @@ const BenPage: React.FC = () => {
     setPrimaryToken(d.PrimaryToken);
     setBeneficiaryID(d.BeneficiaryID);
     setSecondaryToken(d.SecondaryToken);
+    /* convert preferred beneficiaries string to array */
+    const pbs = d.PreferredBeneficiaries?.trim() || "";
+    setPreferredBeneficiariesString(pbs);
+    const preferredBeneficiaries = pbs.split(",").map((s) => s.trim());
+    setPreferredBeneficiaries(preferredBeneficiaries);
   };
 
   const hpChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -72,25 +82,32 @@ const BenPage: React.FC = () => {
     setActiveData(d);
   };
 
-  const onNewPrimaryToken = (individualID: IndividualID, addressID: AddressID, serviceProviderID: ServiceProviderID, token: PrimaryToken) => {
+  const onNewPrimaryToken: OnNewPrimaryToken = (
+    individualID: IndividualID,
+    addressID: AddressID,
+    serviceProviderID: ServiceProviderID,
+    token: PrimaryToken,
+  ) => {
     setIndividualID(individualID);
     setAddressID(addressID);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
-  const onNewSecondaryToken = (
+  const onNewSecondaryToken: OnNewSecondaryToken = (
     individualID: IndividualID,
     addressID: AddressID,
     serviceProviderID: ServiceProviderID,
+    primaryToken: PrimaryToken,
     beneficiaryID: BeneficiaryID,
-    token: SecondaryToken,
+    secondaryToken: SecondaryToken,
   ) => {
     setIndividualID(individualID);
     setAddressID(addressID);
     setServiceProviderID(serviceProviderID);
+    setPrimaryToken(primaryToken);
     setBeneficiaryID(beneficiaryID);
-    setSecondaryToken(token);
+    setSecondaryToken(secondaryToken);
   };
 
   const onUpdate = () => {
@@ -101,6 +118,8 @@ const BenPage: React.FC = () => {
     const pTkn = primaryToken;
     const benID = beneficiaryID;
     const sTkn = secondaryToken;
+    const prefBenIDs = preferredBeneficiaries;
+    const prefBenIDsString = preferredBeneficiariesString;
     const dt = new Date().toISOString();
 
     setJWHost(dt);
@@ -110,6 +129,8 @@ const BenPage: React.FC = () => {
     setPrimaryToken(dt);
     setBeneficiaryID(dt);
     setSecondaryToken(dt);
+    setPreferredBeneficiaries([dt]);
+    setPreferredBeneficiariesString(dt);
 
     setJWHost(hostport);
     setIndividualID(indID);
@@ -118,6 +139,8 @@ const BenPage: React.FC = () => {
     setPrimaryToken(pTkn);
     setBeneficiaryID(benID);
     setSecondaryToken(sTkn);
+    setPreferredBeneficiaries(prefBenIDs);
+    setPreferredBeneficiariesString(prefBenIDsString);
   };
 
   useEffect(() => {
@@ -136,6 +159,7 @@ const BenPage: React.FC = () => {
               PrimaryToken: data[hostPort]["primaryToken"],
               BeneficiaryID: data[hostPort]["beneficiaryID"],
               SecondaryToken: data[hostPort]["secondaryToken"],
+              PreferredBeneficiaries: data[hostPort]["preferredBeneficiaries"],
             };
             m[hostPort] = d;
           });
@@ -179,6 +203,7 @@ const BenPage: React.FC = () => {
         setUserTypeName("Service Provider Employee");
         setSecondaryToken("");
         setBeneficiaryID("");
+        setPreferredBeneficiaries([]);
         return;
       }
       if (cookies["X-USER-TYPE"] === "BENEFICIARY") {
@@ -186,6 +211,7 @@ const BenPage: React.FC = () => {
         setUserTypeName("Beneficiary Employee");
         setPrimaryToken("");
         setServiceProviderID("");
+        setPreferredBeneficiaries([]);
         return;
       }
     }
@@ -204,7 +230,7 @@ const BenPage: React.FC = () => {
           <div className="grid gap-4">
             <div className="bg-gray-100 p-2">
               <JWAddress
-                embedAs={EmbedMode.SERVICE_PROVIDER}
+                embedAs={EmbedMode.BENEFICIARY}
                 hostPort={jwHost}
                 individualID={individualID}
                 addressID={addressID}
@@ -292,7 +318,6 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="individualID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  readOnly
                   value={individualID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
                 ></input>
@@ -305,7 +330,6 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="addressID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  readOnly
                   value={addressID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
                 ></input>
@@ -325,7 +349,6 @@ const BenPage: React.FC = () => {
                     type="text"
                     id="serviceProviderID"
                     className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                    readOnly
                     value={serviceProviderID}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}
                   ></input>
@@ -339,7 +362,6 @@ const BenPage: React.FC = () => {
                     id="primaryToken"
                     className="w-full rounded-md border px-3 py-2 text-sm font-light"
                     rows={4}
-                    readOnly
                     value={primaryToken}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}
                   ></textarea>
@@ -360,7 +382,6 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="beneficiaryID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  readOnly
                   value={beneficiaryID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setBeneficiaryID(event.target.value)}
                 ></input>

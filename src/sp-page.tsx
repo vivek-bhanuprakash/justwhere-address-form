@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import JWAddress, { EmbedMode } from "./components/jw-address";
+import JWAddress from "./components/jw-address";
+import { EmbedMode, OnNewPrimaryToken, OnNewSecondaryToken } from "./components/types";
 import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, ServiceProviderID } from "./util";
 
 enum UserType {
@@ -18,6 +19,7 @@ interface Data {
   PrimaryToken: string;
   BeneficiaryID: string;
   SecondaryToken: string;
+  PreferredBeneficiaries: string;
 }
 
 const SPPage: React.FC = () => {
@@ -32,14 +34,17 @@ const SPPage: React.FC = () => {
   const [activeHP, setActiveHP] = React.useState("");
   const [hps, setHPs] = React.useState<Record<string, Data>>({});
 
-  const [individualID, setIndividualID] = useState<string>("");
-  const [addressID, setAddressID] = useState<string>("");
+  const [individualID, setIndividualID] = useState<IndividualID>("");
+  const [addressID, setAddressID] = useState<AddressID>("");
 
-  const [serviceProviderID, setServiceProviderID] = useState("");
-  const [primaryToken, setPrimaryToken] = useState<string>("");
+  const [serviceProviderID, setServiceProviderID] = useState<ServiceProviderID>("");
+  const [primaryToken, setPrimaryToken] = useState<PrimaryToken>("");
 
-  const [beneficiaryID, setBeneficiaryID] = useState<string>("");
-  const [secondaryToken, setSecondaryToken] = useState<string>("");
+  const [beneficiaryID, setBeneficiaryID] = useState<BeneficiaryID>("");
+  const [secondaryToken, setSecondaryToken] = useState<SecondaryToken>("");
+
+  const [preferredBeneficiaries, setPreferredBeneficiaries] = useState<BeneficiaryID[]>([]);
+  const [preferredBeneficiariesString, setPreferredBeneficiariesString] = useState<string>("");
 
   // const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
   //     console.error(error);
@@ -61,6 +66,12 @@ const SPPage: React.FC = () => {
     setPrimaryToken(d.PrimaryToken);
     setBeneficiaryID(d.BeneficiaryID);
     setSecondaryToken(d.SecondaryToken);
+    /* convert preferred beneficiaries string to array */
+    const pbs = d.PreferredBeneficiaries?.trim() || "";
+    setPreferredBeneficiariesString(pbs);
+    const preferredBeneficiaries = pbs.split(",").map((s) => s.trim());
+    console.debug("preferred beneficiaries", preferredBeneficiaries);
+    setPreferredBeneficiaries(preferredBeneficiaries);
   };
 
   const hpChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -73,25 +84,32 @@ const SPPage: React.FC = () => {
     setActiveData(d);
   };
 
-  const onNewPrimaryToken = (individualID: IndividualID, addressID: AddressID, serviceProviderID: ServiceProviderID, token: PrimaryToken) => {
+  const onNewPrimaryToken: OnNewPrimaryToken = (
+    individualID: IndividualID,
+    addressID: AddressID,
+    serviceProviderID: ServiceProviderID,
+    token: PrimaryToken,
+  ) => {
     setIndividualID(individualID);
     setAddressID(addressID);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
-  const onNewSecondaryToken = (
+  const onNewSecondaryToken: OnNewSecondaryToken = (
     individualID: IndividualID,
     addressID: AddressID,
     serviceProviderID: ServiceProviderID,
+    primaryToken: PrimaryToken,
     beneficiaryID: BeneficiaryID,
-    token: SecondaryToken,
+    secondaryToken: SecondaryToken,
   ) => {
     setIndividualID(individualID);
     setAddressID(addressID);
     setServiceProviderID(serviceProviderID);
+    setPrimaryToken(primaryToken);
     setBeneficiaryID(beneficiaryID);
-    setSecondaryToken(token);
+    setSecondaryToken(secondaryToken);
   };
 
   const onUpdate = () => {
@@ -102,6 +120,8 @@ const SPPage: React.FC = () => {
     const pTkn = primaryToken;
     const benID = beneficiaryID;
     const sTkn = secondaryToken;
+    const prefBenIDs = preferredBeneficiaries;
+    const prefBenIDsString = preferredBeneficiariesString;
     const dt = new Date().toISOString();
 
     setJWHost(dt);
@@ -111,6 +131,8 @@ const SPPage: React.FC = () => {
     setPrimaryToken(dt);
     setBeneficiaryID(dt);
     setSecondaryToken(dt);
+    setPreferredBeneficiaries([dt]);
+    setPreferredBeneficiariesString(dt);
 
     setJWHost(hostport);
     setIndividualID(indID);
@@ -119,6 +141,8 @@ const SPPage: React.FC = () => {
     setPrimaryToken(pTkn);
     setBeneficiaryID(benID);
     setSecondaryToken(sTkn);
+    setPreferredBeneficiaries(prefBenIDs);
+    setPreferredBeneficiariesString(prefBenIDsString);
   };
 
   useEffect(() => {
@@ -137,6 +161,7 @@ const SPPage: React.FC = () => {
               PrimaryToken: data[hostPort]["primaryToken"],
               BeneficiaryID: data[hostPort]["beneficiaryID"],
               SecondaryToken: data[hostPort]["secondaryToken"],
+              PreferredBeneficiaries: data[hostPort]["preferredBeneficiaries"],
             };
             m[hostPort] = d;
           });
@@ -180,6 +205,7 @@ const SPPage: React.FC = () => {
         setUserTypeName("Service Provider Employee");
         setSecondaryToken("");
         setBeneficiaryID("");
+        setPreferredBeneficiaries([]);
         return;
       }
       if (cookies["X-USER-TYPE"] === "BENEFICIARY") {
@@ -187,6 +213,7 @@ const SPPage: React.FC = () => {
         setUserTypeName("Beneficiary Employee");
         setPrimaryToken("");
         setServiceProviderID("");
+        setPreferredBeneficiaries([]);
         return;
       }
     }
@@ -212,6 +239,7 @@ const SPPage: React.FC = () => {
                 serviceProviderID={serviceProviderID}
                 primaryToken={primaryToken}
                 beneficiaryID={beneficiaryID}
+                beneficiaryIDs={preferredBeneficiaries}
                 secondaryToken={secondaryToken}
                 onNewPrimaryToken={onNewPrimaryToken}
                 onNewSecondaryToken={onNewSecondaryToken}
@@ -223,7 +251,7 @@ const SPPage: React.FC = () => {
                   <h2 className="mb-4 text-lg font-semibold uppercase">Output</h2>
                   <div className="mb-0">
                     <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                      Address Key
+                      Service Address Key
                     </label>
                     <textarea
                       id="primaryToken"
@@ -231,6 +259,18 @@ const SPPage: React.FC = () => {
                       rows={4}
                       value={primaryToken}
                       onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}
+                    ></textarea>
+                  </div>
+                  <div className="mt-5">
+                    <label htmlFor="secondaryToken" className="mb-1 block text-xs font-semibold uppercase">
+                      Beneficiary Address Key
+                    </label>
+                    <textarea
+                      id="secondaryToken"
+                      className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                      rows={4}
+                      value={secondaryToken}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setSecondaryToken(event.target.value)}
                     ></textarea>
                   </div>
                 </div>
@@ -293,7 +333,6 @@ const SPPage: React.FC = () => {
                   type="text"
                   id="individualID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  readOnly
                   value={individualID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
                 ></input>
@@ -325,10 +364,31 @@ const SPPage: React.FC = () => {
                   id="serviceProviderID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
                   value={serviceProviderID}
-                  readOnly
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setServiceProviderID(event.target.value)}
                 ></input>
               </div>
+              {userType === UserType.Customer ? (
+                <div className="mb-0">
+                  <label htmlFor="preferredBeneficiaries" className="mb-1 block text-xs font-semibold uppercase">
+                    Preferred Beneficiaries
+                  </label>
+                  <textarea
+                    id="preferredBeneficiaries"
+                    className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                    rows={4}
+                    value={preferredBeneficiariesString}
+                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                      /* convert preferred beneficiaries string to array */
+                      const preferredBeneficiariesString = event.target.value;
+                      setPreferredBeneficiariesString(preferredBeneficiariesString);
+                      const preferredBeneficiaries = preferredBeneficiariesString.split(",");
+                      setPreferredBeneficiaries(preferredBeneficiaries);
+                    }}
+                  ></textarea>
+                </div>
+              ) : (
+                <></>
+              )}
               {userType === UserType.SPEmployee ? (
                 <div className="mb-0">
                   <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
