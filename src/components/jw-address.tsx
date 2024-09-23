@@ -11,10 +11,18 @@ import {
   SecondaryToken,
   ServiceProviderID,
 } from "../util";
-import { UserInfo } from "./jw-address-form copy";
-import JWAddressFormCustomer from "./jw-address-form-customer";
+import JWAddressFormServiceProviderCustomer from "./jw-address-form-sp-customer";
 import JWLogin, { OnLoginComplete } from "./jw-login";
-import { EmbedMode, OnAuthenticationRequired, OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./types";
+import {
+  EmbedMode,
+  OnAuthenticationRequired,
+  OnContentSharedWithBeneficiary,
+  OnContentSharedWithServiceProvider,
+  OnContentUnsharedWithBeneficiary,
+  OnContentUnsharedWithServiceProvider,
+  OnErrorFcn,
+  UserInfo,
+} from "./types";
 
 export interface JWAddressProps {
   embedAs: EmbedMode;
@@ -26,14 +34,17 @@ export interface JWAddressProps {
   serviceProviderID?: ServiceProviderID;
   primaryToken?: PrimaryToken;
 
-  beneficiaryID?: BeneficiaryID;
   beneficiaryIDs?: BeneficiaryID[];
   secondaryToken?: SecondaryToken;
 
   onAuthenticationRequired?: OnAuthenticationRequired;
   onError?: OnErrorFcn;
-  onNewPrimaryToken?: OnNewPrimaryToken;
-  onNewSecondaryToken?: OnNewSecondaryToken;
+
+  onContentSharedWithServiceProvider?: OnContentSharedWithServiceProvider;
+  onContentUnsharedWithServiceProvider?: OnContentUnsharedWithServiceProvider;
+
+  onContentSharedWithBeneficiary?: OnContentSharedWithBeneficiary;
+  onContentUnsharedWithBeneficiary?: OnContentUnsharedWithBeneficiary;
 }
 
 const JWAddress: React.FC<JWAddressProps> = ({
@@ -43,13 +54,14 @@ const JWAddress: React.FC<JWAddressProps> = ({
   addressID,
   serviceProviderID,
   primaryToken,
-  beneficiaryID,
   beneficiaryIDs,
   secondaryToken,
   onAuthenticationRequired,
   onError,
-  onNewPrimaryToken,
-  onNewSecondaryToken,
+  onContentSharedWithServiceProvider,
+  onContentUnsharedWithServiceProvider,
+  onContentSharedWithBeneficiary,
+  onContentUnsharedWithBeneficiary,
 }) => {
   const emptyUserInfo: UserInfo = {
     userID: "",
@@ -103,19 +115,20 @@ const JWAddress: React.FC<JWAddressProps> = ({
   return (
     <>
       {isLoggedIn ? (
-        <JWAddressFormCustomer
+        <JWAddressFormServiceProviderCustomer
           hostPort={hostPort}
           authToken={""}
           // individualID={individualID || ""}
           addressID={addressID}
           serviceProviderID={serviceProviderID}
           primaryToken={primaryToken}
-          beneficiaryID={beneficiaryID}
           beneficiaryIDs={beneficiaryIDs}
           // secondaryToken={secondaryToken}
           onError={onErrorInternal}
-          onNewPrimaryToken={onNewPrimaryToken}
-          onNewSecondaryToken={onNewSecondaryToken}
+          onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}
+          onContentUnsharedWithServiceProvider={onContentUnsharedWithServiceProvider}
+          onContentSharedWithBeneficiary={onContentSharedWithBeneficiary}
+          onContentUnsharedWithBeneficiary={onContentUnsharedWithBeneficiary}
         />
       ) : (
         <JWLogin hostPort={hostPort} onLoginComplete={onLoginComplete} onError={onError} />

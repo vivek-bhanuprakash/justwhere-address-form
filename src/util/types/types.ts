@@ -1,6 +1,7 @@
 export type UserID = string;
 export type IndividualID = string;
 export type AddressID = string;
+export type SecureContentID = string;
 export type ServiceProviderID = string;
 export type BeneficiaryID = string;
 export type PrimaryToken = string;

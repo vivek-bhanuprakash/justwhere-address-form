@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+
 import {
   Address,
   AddressID,
@@ -30,33 +31,19 @@ import {
   ServiceProviderSharesRequest,
 } from "../util";
 import { GetBeneficiaryInfo, GetServiceProviderInfo, ServiceProviderInfoRequest } from "../util/providers/providers";
-import { OnErrorFcn, OnNewPrimaryToken, OnNewSecondaryToken } from "./types";
-
-type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
-
-const Input: React.FC<InputProps> = (props: InputProps) => {
-  return (
-    <input
-      type="text"
-      className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-      {...props}
-    />
-  );
-};
-
-type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;
-const Label: React.FC<LabelProps> = (props: LabelProps) => {
-  return (
-    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-900" {...props}>
-      {props.children}
-    </label>
-  );
-};
-
-export interface UserInfo {
-  userID: string;
-  individualID: string;
-}
+import AddressForm from "./internal/address";
+import Label from "./internal/label";
+import ShareBtn from "./internal/shareBtn";
+import UnshareBtn from "./internal/unshareBtn";
+import {
+  OnContentSharedWithBeneficiary,
+  OnContentSharedWithServiceProvider,
+  OnContentUnsharedWithBeneficiary,
+  OnContentUnsharedWithServiceProvider,
+  OnErrorFcn,
+  SecureContentType,
+  UserInfo,
+} from "./types";
 
 export interface AddressProps {
   hostPort: string;
@@ -66,11 +53,13 @@ export interface AddressProps {
   primaryToken?: PrimaryToken;
   beneficiaryIDs?: BeneficiaryID[];
   onError?: OnErrorFcn;
-  onNewPrimaryToken?: OnNewPrimaryToken;
-  onNewSecondaryToken?: OnNewSecondaryToken;
+  onContentSharedWithServiceProvider?: OnContentSharedWithServiceProvider;
+  onContentUnsharedWithServiceProvider?: OnContentUnsharedWithServiceProvider;
+  onContentSharedWithBeneficiary?: OnContentSharedWithBeneficiary;
+  onContentUnsharedWithBeneficiary?: OnContentUnsharedWithBeneficiary;
 }
 
-const JWAddressFormCustomer: React.FC<AddressProps> = ({
+const JWAddressFormServiceProviderCustomer: React.FC<AddressProps> = ({
   hostPort,
   authToken,
   addressID,
@@ -78,8 +67,10 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
   primaryToken,
   beneficiaryIDs,
   onError,
-  onNewPrimaryToken,
-  onNewSecondaryToken,
+  onContentSharedWithServiceProvider,
+  onContentUnsharedWithServiceProvider,
+  onContentSharedWithBeneficiary,
+  onContentUnsharedWithBeneficiary,
 }) => {
   const [internalIndividualID, setInternalIndividualID] = useState<IndividualID>("");
   const [internalAddressID, setInternalAddressID] = useState<AddressID>("");
@@ -102,7 +93,7 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
   const [reprocessTwo, setReprocessTwo] = useState<boolean>(false);
 
   const internalPrimaryToken = useRef<PrimaryToken>("");
-  const internalSecondaryTokens = useRef<SecondaryToken[]>([]);
+  const internalSecondaryToken = useRef<SecondaryToken>("");
 
   const raiseError = (err: JWError) => {
     if (onError === undefined || typeof onError !== "function") {
@@ -124,42 +115,8 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
     setSelectedBeneficiary(beneficiaries[event.target.value]);
   };
 
-  const onGenerateSecondaryToken = async () => {
+  const onContentSharedWithServiceProviderInternal = async () => {
     try {
-      if (onNewSecondaryToken === undefined || typeof onNewSecondaryToken !== "function") {
-        console.warn("JustWhere: onNewSecondaryToken function is not provided or is not a function. no token will be generated.");
-        return raiseError(new JWError("onNewSecondaryToken callback not provided. no token will be generated"));
-      }
-
-      setReprocessTwo(false);
-      const request: SecondaryTokenRequest = {
-        hostPort,
-        serviceProviderID: serviceProvider?.ID || "",
-        beneficiaryID: selectedBeneficiary?.ID || "",
-        token: internalPrimaryToken.current || "",
-      };
-
-      const response = await GenererateSecondaryToken(request);
-      setReprocessTwo(true);
-      try {
-        onNewSecondaryToken(internalIndividualID || "", address?.ID || "", request.serviceProviderID, request.token, request.beneficiaryID, response.token);
-      } catch (e) {
-        console.error("JustWhere: onNewSecondaryToken callback function threw an error: ", e);
-        return raiseError(new JWError((e as Error).message));
-      }
-    } catch (e) {
-      console.error("JustWhere: error generating secondary token: ", e);
-      return raiseError(e as JWError);
-    }
-  };
-
-  const onGeneratePrimaryToken = async () => {
-    try {
-      if (onNewPrimaryToken === undefined || typeof onNewPrimaryToken !== "function") {
-        console.warn("JustWhere: onNewPrimaryToken callback function is not provided or is not a function. no token will be generated.");
-        return raiseError(new JWError("onNewPrimaryToken callback not provided. no token will be generated"));
-      }
-
       const request: PrimaryTokenRequest = {
         hostPort: hostPort,
         individualID: internalIndividualID || "",
@@ -167,20 +124,27 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
         serviceProviderID: serviceProviderID || "",
       };
 
+      setReprocessOne(false);
       const response: PrimaryTokenResponse = await GenereratePrimaryToken(request);
-      try {
-        onNewPrimaryToken(request.individualID, request.addressID, request.serviceProviderID, response.token);
-      } catch (e) {
-        console.error("JustWhere: onNewPrimaryToken callback function threw an error: ", e);
-        return raiseError(new JWError((e as Error).message));
+      setReprocessOne(true);
+
+      if (onContentSharedWithServiceProvider !== undefined || typeof onContentSharedWithServiceProvider === "function") {
+        try {
+          onContentSharedWithServiceProvider(SecureContentType.ADDRESS, request.individualID, request.addressID, request.serviceProviderID, response.token);
+        } catch (e) {
+          console.error("JustWhere: onContentSharedWithServiceProvider callback function threw an error: ", e);
+          return raiseError(new JWError((e as Error).message));
+        }
+      } else {
+        console.warn("JustWhere: onContentSharedWithServiceProvider callback function is not provided or is not a function");
       }
     } catch (e) {
-      console.error("JustWhere: error generating primary token: ", e);
+      console.error("JustWhere: error generating service provider token: ", e);
       return raiseError(e as JWError);
     }
   };
 
-  const onUnshareAddressWithServiceProvider = async () => {
+  const onContentUnsharedWithServiceProviderInternal = async () => {
     try {
       if (sharedWithServiceProvider === false) return;
       setReprocessOne(false);
@@ -194,37 +158,97 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
 
       await DisablePrimaryToken(request);
       setReprocessOne(true);
+
+      if (onContentUnsharedWithServiceProvider !== undefined && typeof onContentUnsharedWithServiceProvider === "function") {
+        try {
+          onContentUnsharedWithServiceProvider(SecureContentType.ADDRESS, request.individualID, request.addressID, request.serviceProviderID);
+        } catch (e) {
+          console.error("JustWhere: onContentUnsharedWithServiceProvider callback function threw an error: ", e);
+          return raiseError(new JWError((e as Error).message));
+        }
+      } else {
+        console.warn("JustWhere: onContentUnsharedWithServiceProvider callback function is not provided or is not a function");
+      }
     } catch (e) {
       console.error("JustWhere: error unsharing address from service provider: ", e);
       return raiseError(e as JWError);
     }
   };
 
-  const onUnshareAddressWithBeneficiary = async () => {
+  const onContentSharedWithBeneficiaryInternal = async () => {
+    try {
+      setReprocessTwo(false);
+      const request: SecondaryTokenRequest = {
+        hostPort,
+        serviceProviderID: serviceProvider?.ID || "",
+        beneficiaryID: selectedBeneficiary?.ID || "",
+        token: internalPrimaryToken.current || "",
+      };
+
+      const response = await GenererateSecondaryToken(request);
+      setReprocessTwo(true);
+      if (onContentSharedWithBeneficiary !== undefined && typeof onContentSharedWithBeneficiary === "function") {
+        try {
+          onContentSharedWithBeneficiary(
+            SecureContentType.ADDRESS,
+            internalIndividualID || "",
+            address?.ID || "",
+            request.serviceProviderID,
+            request.token,
+            request.beneficiaryID,
+            response.token,
+          );
+        } catch (e) {
+          console.error("JustWhere: onContentSharedWithBeneficiary callback function threw an error: ", e);
+          return raiseError(new JWError((e as Error).message));
+        }
+      } else {
+        console.warn("JustWhere: onContentSharedWithBeneficiary callback function is not provided or is not a function");
+      }
+    } catch (e) {
+      console.error("JustWhere: error generating beneficiary token: ", e);
+      return raiseError(e as JWError);
+    }
+  };
+
+  const onContentUnsharedWithBeneficiaryInternal = async () => {
     if (sharedWithBeneficiary === false) return;
     if (serviceProvider === undefined || serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) return;
     if (selectedBeneficiary === undefined || selectedBeneficiary.ID === undefined || selectedBeneficiary.ID.trim().length === 0) return;
-    if (internalSecondaryTokens.current.length === 0) return;
+    if (internalSecondaryToken.current.length === 0) return;
 
     setReprocessTwo(false);
-    internalSecondaryTokens.current.forEach(async (token) => {
-      try {
-        const request: DisableSecondaryTokenRequest = {
-          hostPort: hostPort,
-          serviceProviderID: serviceProvider?.ID || "",
-          beneficiaryID: selectedBeneficiary?.ID || "",
-          secondaryToken: token || "",
-        };
+    try {
+      const request: DisableSecondaryTokenRequest = {
+        hostPort: hostPort,
+        serviceProviderID: serviceProvider?.ID || "",
+        beneficiaryID: selectedBeneficiary?.ID || "",
+        secondaryToken: internalSecondaryToken.current || "",
+      };
 
-        await DisableSecondaryToken(request);
-        setReprocessTwo(true);
-      } catch (e) {
-        console.error("JustWhere: error unsharing address from beneficiary: ", e);
-        return raiseError(e as JWError);
+      await DisableSecondaryToken(request);
+      setReprocessTwo(true);
+      if (onContentUnsharedWithBeneficiary !== undefined && typeof onContentUnsharedWithBeneficiary === "function") {
+        try {
+          onContentUnsharedWithBeneficiary(
+            SecureContentType.ADDRESS,
+            internalIndividualID || "",
+            address?.ID || "",
+            request.serviceProviderID,
+            request.beneficiaryID,
+          );
+        } catch (e) {
+          console.error("JustWhere: onContentUnsharedWithBeneficiary callback function threw an error: ", e);
+          return raiseError(new JWError((e as Error).message));
+        }
+      } else {
+        console.warn("JustWhere: onContentUnsharedWithBeneficiary callback function is not provided or is not a function");
       }
-    });
+    } catch (e) {
+      console.error("JustWhere: error unsharing address from beneficiary: ", e);
+      return raiseError(e as JWError);
+    }
   };
-
   /* load current user info */
   useEffect(() => {
     setShowGenPrimaryToken(false);
@@ -489,13 +513,13 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
         setShowUnshareSecondaryToken(false);
         setSharedWithBeneficiary(false);
 
-        internalSecondaryTokens.current = [];
+        internalSecondaryToken.current = "";
       } else {
         setShowGenSecondaryToken(false);
         setShowUnshareSecondaryToken(true);
         setSharedWithBeneficiary(true);
 
-        internalSecondaryTokens.current = (response.shares.map((share) => share.token) || []) as SecondaryToken[];
+        internalSecondaryToken.current = response.shares[0].token || "";
       }
     });
   }, [address, serviceProvider, selectedBeneficiary, reprocessTwo]);
@@ -537,101 +561,20 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
         </select>
       </div>
 
-      <div>
-        <Label htmlFor="address-type">Type</Label>
-        <Input id="address-type" value={address?.Label} />
-      </div>
-
-      <div>
-        <Label htmlFor="address-name">Name</Label>
-        <Input id="address-name" value={address?.Name} />
-      </div>
-
-      <div>
-        <Label htmlFor="address-street1">Street</Label>
-        <Input id="address-street1" value={address?.Street1} />
-      </div>
-
-      <div className="@xs/address-content:grid-cols-2 grid gap-3">
-        <div>
-          <Label htmlFor="address-city">City</Label>
-          <Input id="address-city" value={address?.City} />
-        </div>
-        <div>
-          <Label htmlFor="address-state">State</Label>
-          <Input id="address-state" value={address?.State} />
-        </div>
-      </div>
-
-      <div className="@xs/address-content:grid-cols-2 grid gap-3">
-        <div>
-          <Label htmlFor="address-zipcode">Post Code</Label>
-          <Input id="address-zipcode" value={address?.PostCode} />
-        </div>
-        <div>
-          <Label htmlFor="address-country">Country</Label>
-          <Input id="address-country" value={address?.Country} />
-        </div>
-      </div>
-
-      <div className="@xs/address-content:grid-cols-2 grid gap-3">
-        <div>
-          <Label htmlFor="address-phone">Phone</Label>
-          <Input type="tel" id="address-phone" value={address?.Phone} />
-        </div>
-        <div>
-          <Label htmlFor="address-email">Email</Label>
-          <Input type="email" id="address-email" value={address?.Email} />
-        </div>
-      </div>
-
-      {address?.Tags !== undefined && Object.keys(address.Tags).length > 0 ? (
-        <div className="@xs/address-content:grid-cols-2 grid gap-3">
-          {Object.entries(address.Tags).map(([tagName, tagValue], index: number, entries) => (
-            <div key={index} className={`${index === entries.length - 1 && entries.length % 2 !== 0 ? "col-span-2" : "col-span-1"}`}>
-              <Label htmlFor={"address-tag-" + tagName.toLowerCase()}>{tagName}</Label>
-              <Input id={"address-tag-" + tagName.toLowerCase()} value={tagValue + ""} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <></>
-      )}
+      <AddressForm address={address || ({} as Address)} />
 
       {serviceProviderID !== undefined && serviceProviderID.trim().length > 0 ? (
         <div>
-          <hr className="h-px my-3 bg-gray-900 border-0" />
+          <hr className="h-px my-3 bg-gray-400 border-0" />
           {sharedWithServiceProvider ? (
             <>
-              <Label>Address is already shared with {serviceProvider?.Name}</Label>
-              <div className="inline-flex gap-1.5 rounded-md shadow-sm" role="group">
-                <button
-                  type="button"
-                  className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
-                  onClick={onUnshareAddressWithServiceProvider}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                    <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
-                  </svg>
-                  <p className="mx-1 inline">Remove Share</p>
-                </button>
-              </div>
+              <Label>Address is shared with {serviceProvider?.Name}</Label>
+              <UnshareBtn onClick={onContentUnsharedWithServiceProviderInternal} />
             </>
           ) : (
             <>
               <Label>Sharing with {serviceProvider?.Name}</Label>
-              <div className="inline-flex gap-1.5 rounded-md shadow-sm" role="group">
-                <button
-                  type="button"
-                  className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
-                  onClick={onGeneratePrimaryToken}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                    <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
-                  </svg>
-                  <p className="mx-1 inline">Share</p>
-                </button>
-              </div>
+              <ShareBtn onClick={onContentSharedWithServiceProviderInternal} />
             </>
           )}
         </div>
@@ -641,7 +584,7 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
 
       {beneficiaries !== undefined && Object.keys(beneficiaries).length > 0 && sharedWithServiceProvider ? (
         <>
-          <hr className="h-px my-3 bg-gray-900 border-0" />
+          <hr className="h-px my-3 bg-gray-400 border-0" />
           <Label htmlFor="preferredBeneficiaries">Preferred Beneficiaries</Label>
           <select
             id="preferredBeneficiaries"
@@ -657,34 +600,12 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
             <>
               {sharedWithBeneficiary ? (
                 <>
-                  <Label>Address is already shared with {selectedBeneficiary?.Name}</Label>
-                  <div className="inline-flex gap-1.5 rounded-md shadow-sm" role="group">
-                    <button
-                      type="button"
-                      className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
-                      onClick={onUnshareAddressWithBeneficiary}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                        <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
-                      </svg>
-                      <p className="mx-1 inline">Remove Share</p>
-                    </button>
-                  </div>
+                  <Label>Address is shared with {selectedBeneficiary?.Name}</Label>
+                  <UnshareBtn onClick={onContentUnsharedWithBeneficiaryInternal} />
                 </>
               ) : (
                 <>
-                  <div className="inline-flex gap-1.5 rounded-md shadow-sm" role="group">
-                    <button
-                      type="button"
-                      className="inline-flex items-center rounded-sm bg-gray-700 px-2.5 py-2 text-sm font-normal text-gray-100 hover:bg-gray-900 hover:text-gray-100 focus:z-10 focus:bg-gray-900 focus:text-gray-100 focus:ring-2 focus:ring-gray-700"
-                      onClick={onGenerateSecondaryToken}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
-                        <path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.995 8.158a2.03 2.03 0 0 0 0-.316L10.677 5.5c.353.311.816.5 1.323.5Z" />
-                      </svg>
-                      <p className="mx-1 inline">Share</p>
-                    </button>
-                  </div>
+                  <ShareBtn onClick={onContentSharedWithBeneficiaryInternal} />
                 </>
               )}
             </>
@@ -699,4 +620,4 @@ const JWAddressFormCustomer: React.FC<AddressProps> = ({
   );
 };
 
-export default JWAddressFormCustomer;
+export default JWAddressFormServiceProviderCustomer;

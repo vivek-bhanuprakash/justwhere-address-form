@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import JWAddress from "./components/jw-address";
-import { EmbedMode, OnNewPrimaryToken, OnNewSecondaryToken } from "./components/types";
-import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, ServiceProviderID } from "./util";
+import {
+  EmbedMode,
+  OnContentSharedWithBeneficiary,
+  OnContentSharedWithServiceProvider,
+  OnContentUnsharedWithBeneficiary,
+  OnContentUnsharedWithServiceProvider,
+  SecureContentType,
+} from "./components/types";
+import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID } from "./util";
 
 enum UserType {
   Unknown,
@@ -82,32 +89,61 @@ const BenPage: React.FC = () => {
     setActiveData(d);
   };
 
-  const onNewPrimaryToken: OnNewPrimaryToken = (
+  const onContentSharedWithServiceProvider: OnContentSharedWithServiceProvider = (
+    contentType: SecureContentType,
     individualID: IndividualID,
-    addressID: AddressID,
+    contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     token: PrimaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(addressID);
+    setAddressID(contentID);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
-  const onNewSecondaryToken: OnNewSecondaryToken = (
+  const onContentUnsharedWithServiceProvider: OnContentUnsharedWithServiceProvider = (
+    contentType: SecureContentType,
     individualID: IndividualID,
-    addressID: AddressID,
+    contentID: AddressID | SecureContentID,
+    serviceProviderID: ServiceProviderID,
+  ) => {
+    setIndividualID(individualID);
+    setAddressID(contentID);
+    setServiceProviderID(serviceProviderID);
+    setPrimaryToken("");
+    setSecondaryToken("");
+  };
+
+  const onContentSharedWithBeneficiary: OnContentSharedWithBeneficiary = (
+    contentType: SecureContentType,
+    individualID: IndividualID,
+    contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     primaryToken: PrimaryToken,
     beneficiaryID: BeneficiaryID,
     secondaryToken: SecondaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(addressID);
+    setAddressID(contentID);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(primaryToken);
     setBeneficiaryID(beneficiaryID);
     setSecondaryToken(secondaryToken);
+  };
+
+  const onContentUnsharedWithBeneficiary: OnContentUnsharedWithBeneficiary = (
+    contentType: SecureContentType,
+    individualID: IndividualID,
+    contentID: AddressID | SecureContentID,
+    serviceProviderID: ServiceProviderID,
+    beneficiaryID: BeneficiaryID,
+  ) => {
+    setIndividualID(individualID);
+    setAddressID(contentID);
+    setServiceProviderID(serviceProviderID);
+    setBeneficiaryID(beneficiaryID);
+    setSecondaryToken("");
   };
 
   const onUpdate = () => {
@@ -236,10 +272,11 @@ const BenPage: React.FC = () => {
                 addressID={addressID}
                 serviceProviderID={serviceProviderID}
                 primaryToken={primaryToken}
-                beneficiaryID={beneficiaryID}
                 secondaryToken={secondaryToken}
-                onNewPrimaryToken={onNewPrimaryToken}
-                onNewSecondaryToken={onNewSecondaryToken}
+                onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}
+                onContentUnsharedWithServiceProvider={onContentUnsharedWithServiceProvider}
+                onContentSharedWithBeneficiary={onContentSharedWithBeneficiary}
+                onContentUnsharedWithBeneficiary={onContentUnsharedWithBeneficiary}
               />
             </div>
             {userType === UserType.Customer ? (
