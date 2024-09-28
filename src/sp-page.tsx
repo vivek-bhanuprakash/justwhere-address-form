@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import JWAddress from "./components/jw-address";
+import JWAddressFormBeneficiaryEmployee from "./components/jw-address-form-ben-employee";
+import JWAddressFormServiceProviderCustomer from "./components/jw-address-form-sp-customer";
+import JWAddressFormServiceProviderEmployee from "./components/jw-address-form-sp-employee";
 import {
-  EmbedMode,
   OnContentSharedWithBeneficiary,
   OnContentSharedWithServiceProvider,
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
   SecureContentType,
 } from "./components/types";
-import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID } from "./util";
+import {
+  AddressID,
+  BeneficiaryID,
+  IndividualID,
+  JWError,
+  JWErrorAuthenticationRequired,
+  PrimaryToken,
+  SecondaryToken,
+  SecureContentID,
+  ServiceProviderID,
+} from "./util";
 
 enum UserType {
   Unknown,
@@ -29,6 +40,8 @@ interface Data {
   PreferredBeneficiaries: string;
 }
 
+const TOKEN_STORAGE_KEY: string = "JWAUTH";
+
 const SPPage: React.FC = () => {
   const [cookies] = useCookies();
 
@@ -37,6 +50,7 @@ const SPPage: React.FC = () => {
   const [userTypeName, setUserTypeName] = useState<string>("");
 
   const [jwHost, setJWHost] = useState<string>("");
+  const [authToken, setAuthToken] = useState<string>("");
 
   const [activeHP, setActiveHP] = React.useState("");
   const [hps, setHPs] = React.useState<Record<string, Data>>({});
@@ -53,17 +67,13 @@ const SPPage: React.FC = () => {
   const [preferredBeneficiaries, setPreferredBeneficiaries] = useState<BeneficiaryID[]>([]);
   const [preferredBeneficiariesString, setPreferredBeneficiariesString] = useState<string>("");
 
-  // const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
-  //     console.error(error);
-  //     if (error instanceof JWErrorAuthenticationRequired) {
-  //         // Unauthorized
-  //         window.open(`${jwHost}/api/login`, "_blank");
-  //     } else if (error instanceof JWErrorBadRequest) {
-
-  //     } else {
-  //         // Anything else
-  //     }
-  // }
+  const onError = (error: JWError) => {
+    if (error instanceof JWErrorAuthenticationRequired) {
+      // Unauthorized
+      window.open(`${jwHost}/api/login`, "_top");
+      return;
+    }
+  };
 
   const setActiveData = (d: Data) => {
     setJWHost(d.HostPort);
@@ -77,7 +87,6 @@ const SPPage: React.FC = () => {
     const pbs = d.PreferredBeneficiaries?.trim() || "";
     setPreferredBeneficiariesString(pbs);
     const preferredBeneficiaries = pbs.split(",").map((s) => s.trim());
-    console.debug("preferred beneficiaries", preferredBeneficiaries);
     setPreferredBeneficiaries(preferredBeneficiaries);
   };
 
@@ -208,6 +217,11 @@ const SPPage: React.FC = () => {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
+    let token = sessionStorage.getItem(TOKEN_STORAGE_KEY) || "";
+    if (token !== "") {
+      token = token.split("Bearer ")[1];
+      setAuthToken(token);
+    }
 
     return () => {
       abortController.abort();
@@ -267,20 +281,49 @@ const SPPage: React.FC = () => {
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="grid gap-4">
             <div className="bg-gray-100 p-2">
-              <JWAddress
-                embedAs={EmbedMode.SERVICE_PROVIDER}
-                hostPort={jwHost}
-                individualID={individualID}
-                addressID={addressID}
-                serviceProviderID={serviceProviderID}
-                primaryToken={primaryToken}
-                beneficiaryIDs={preferredBeneficiaries}
-                secondaryToken={secondaryToken}
-                onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}
-                onContentUnsharedWithServiceProvider={onContentUnsharedWithServiceProvider}
-                onContentSharedWithBeneficiary={onContentSharedWithBeneficiary}
-                onContentUnsharedWithBeneficiary={onContentUnsharedWithBeneficiary}
-              />
+              {userType === UserType.Customer ? (
+                <JWAddressFormServiceProviderCustomer
+                  hostPort={jwHost}
+                  authToken={authToken}
+                  addressID={addressID}
+                  serviceProviderID={serviceProviderID}
+                  primaryToken={primaryToken}
+                  beneficiaryIDs={preferredBeneficiaries}
+                  onError={onError}
+                  onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}
+                  onContentUnsharedWithServiceProvider={onContentUnsharedWithServiceProvider}
+                  onContentSharedWithBeneficiary={onContentSharedWithBeneficiary}
+                  onContentUnsharedWithBeneficiary={onContentUnsharedWithBeneficiary}
+                />
+              ) : (
+                <></>
+              )}
+              {userType === UserType.SPEmployee ? (
+                <JWAddressFormServiceProviderEmployee
+                  hostPort={jwHost}
+                  authToken={authToken}
+                  individualID={individualID}
+                  addressID={addressID}
+                  serviceProviderID={serviceProviderID}
+                  primaryToken={primaryToken}
+                  onError={onError}
+                />
+              ) : (
+                <></>
+              )}
+              {userType === UserType.BNEmployee ? (
+                <JWAddressFormBeneficiaryEmployee
+                  hostPort={jwHost}
+                  authToken={authToken}
+                  individualID={individualID}
+                  addressID={addressID}
+                  beneficiaryID={beneficiaryID}
+                  secondaryToken={secondaryToken}
+                  onError={onError}
+                />
+              ) : (
+                <></>
+              )}
             </div>
             {userType === UserType.Customer ? (
               <div className="">

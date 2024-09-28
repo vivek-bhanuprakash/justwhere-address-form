@@ -11,7 +11,7 @@ import {
   JWError,
   PrimaryToken,
   PrimaryTokenAddressRequest,
-  ServiceProviderID,
+  ServiceProviderID
 } from "../util";
 import AddressForm from "./internal/address";
 import { OnErrorFcn, UserInfo } from "./types";
@@ -38,6 +38,53 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
   const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "" });
   const [address, setAddress] = useState<Address>();
 
+  const maskFields = (address: Address): Address => {
+    address.IndividualID = valueOrHidden(address?.IndividualID);
+    address.ID = valueOrHidden(address?.ID);
+    address.Label = valueOrHidden(address?.Label);
+    address.Name = valueOrHidden(address?.Name);
+    address.Street1 = valueOrHidden(address?.Street1);
+    address.Street2 = valueOrHidden(address?.Street2);
+    address.Street3 = valueOrHidden(address?.Street3);
+    address.City = valueOrHidden(address?.City);
+    address.State = valueOrHidden(address?.State);
+    address.PostCode = valueOrHidden(address?.PostCode);
+    address.Country = valueOrHidden(address?.Country);
+    address.Phone = valueOrHidden(address?.Phone);
+    address.Email = valueOrHidden(address?.Email);
+
+    for (const key in address.Tags) {
+      const tag = address.Tags[key];
+      if (tag === undefined) address.Tags[key] = "hidden";
+      if (tag === null) address.Tags[key] = "hidden";
+      if (tag === "") address.Tags[key] = "hidden";
+    }
+
+    return address;
+  };
+
+  const valueOrHidden = (field: string | undefined): string => {
+    if (field === undefined || field.trim().length === 0) return "hidden";
+    return field;
+  };
+
+  const EMPTY_ADDRESS: Address = {
+    ID: "",
+    IndividualID: "",
+    Label: "",
+    Name: "",
+    Street1: "",
+    Street2: "",
+    Street3: "",
+    City: "",
+    State: "",
+    PostCode: "",
+    Country: "",
+    Phone: "",
+    Email: "",
+    Tags: {},
+  };
+
   const raiseError = (err: JWError) => {
     if (onError === undefined || typeof onError !== "function") {
       console.warn("JustWhere: onError function is not provided or not a function");
@@ -52,7 +99,7 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
 
   /* load current user info */
   useEffect(() => {
-    setAddress({} as Address);
+    setAddress(EMPTY_ADDRESS);
 
     if (hostPort === undefined || typeof hostPort !== "string" || hostPort.trim().length === 0) {
       console.error("JustWhere: no hostPort provided or hostPort is not a string");
@@ -79,7 +126,7 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
 
   /* retrieve service provider details */
   useEffect(() => {
-    setAddress({} as Address);
+    setAddress(EMPTY_ADDRESS); // reset address
 
     if (currentUserInfo.individualID.trim().length === 0) return;
     if (individualID === undefined || typeof individualID !== "string" || individualID.trim().length === 0) return;
@@ -96,7 +143,7 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
     };
     GetAddressUsingPrimaryToken(req)
       .then((response) => {
-        setAddress(response.address);
+        setAddress(maskFields(response.address));
       })
       .catch((error) => {
         raiseError(error as JWError);

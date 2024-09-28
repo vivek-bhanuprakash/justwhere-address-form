@@ -564,11 +564,18 @@ const JWAddressFormServiceProviderCustomer: React.FC<AddressProps> = ({
       <AddressForm address={address || ({} as Address)} />
 
       {serviceProviderID !== undefined && serviceProviderID.trim().length > 0 ? (
-        <div>
-          <hr className="h-px my-3 bg-gray-400 border-0" />
+        <div className="mt-3">
+          {/* <hr className="h-px mt-3 bg-gray-300 border-0" /> */}
           {sharedWithServiceProvider ? (
             <>
-              <Label>Address is shared with {serviceProvider?.Name}</Label>
+              <label className="mb-4 block text-xs uppercase font-semibold tracking-normal text-gray-900">
+                <span className="inline-flex items-center justify-center w-4 h-4 me-1 text-xs font-semibold text-gray-100 bg-green-700 rounded-full">
+                  <svg className="w-2.5 h-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 12">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5.917 5.724 10.5 15 1.5" />
+                  </svg>
+                </span>
+                Shared with {serviceProvider?.Name}
+              </label>
               <UnshareBtn onClick={onContentUnsharedWithServiceProviderInternal} />
             </>
           ) : (
@@ -584,34 +591,45 @@ const JWAddressFormServiceProviderCustomer: React.FC<AddressProps> = ({
 
       {beneficiaries !== undefined && Object.keys(beneficiaries).length > 0 && sharedWithServiceProvider ? (
         <>
-          <hr className="h-px my-3 bg-gray-400 border-0" />
-          <Label htmlFor="preferredBeneficiaries">Preferred Beneficiaries</Label>
-          <select
-            id="preferredBeneficiaries"
-            className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-            value={selectedBeneficiary?.ID}
-            onChange={onSelectedBeneficiaryChanged}
-          >
-            {Object.keys(beneficiaries).map((beneficiaryID) => (
-              <option value={beneficiaryID}>{beneficiaries[beneficiaryID].Name}</option>
-            ))}
-          </select>
-          {selectedBeneficiary !== undefined && selectedBeneficiary.ID !== undefined && selectedBeneficiary.ID.trim().length > 0 ? (
-            <>
-              {sharedWithBeneficiary ? (
-                <>
-                  <Label>Address is shared with {selectedBeneficiary?.Name}</Label>
-                  <UnshareBtn onClick={onContentUnsharedWithBeneficiaryInternal} />
-                </>
-              ) : (
-                <>
-                  <ShareBtn onClick={onContentSharedWithBeneficiaryInternal} />
-                </>
-              )}
-            </>
-          ) : (
-            <></>
-          )}
+          <hr className="h-px mt-3 bg-gray-300 border-0" />
+          <div className="mt-3">
+            <label htmlFor="preferredBeneficiaries" className="mb-2 block text-xs font-semibold uppercase tracking-normal text-gray-900">
+              Preferred Beneficiaries of {serviceProvider?.Name}
+            </label>
+            <select
+              id="preferredBeneficiaries"
+              className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+              value={selectedBeneficiary?.ID}
+              onChange={onSelectedBeneficiaryChanged}
+            >
+              {Object.keys(beneficiaries).map((beneficiaryID) => (
+                <option value={beneficiaryID}>{beneficiaries[beneficiaryID].Name}</option>
+              ))}
+            </select>
+            {selectedBeneficiary !== undefined && selectedBeneficiary.ID !== undefined && selectedBeneficiary.ID.trim().length > 0 ? (
+              <div>
+                {sharedWithBeneficiary ? (
+                  <>
+                    <label className="mt-3 mb-4 block text-xs uppercase font-semibold tracking-normal text-gray-900">
+                      <span className="inline-flex items-center justify-center w-4 h-4 me-1 text-xs font-semibold text-gray-100 bg-green-700 rounded-full">
+                        <svg className="w-2.5 h-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 12">
+                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5.917 5.724 10.5 15 1.5" />
+                        </svg>
+                      </span>
+                      Shared with {selectedBeneficiary?.Name}
+                    </label>
+                    <UnshareBtn onClick={onContentUnsharedWithBeneficiaryInternal} />
+                  </>
+                ) : (
+                  <>
+                    <ShareBtn onClick={onContentSharedWithBeneficiaryInternal} />
+                  </>
+                )}
+              </div>
+            ) : (
+              <></>
+            )}
+          </div>
         </>
       ) : (
         <></>
