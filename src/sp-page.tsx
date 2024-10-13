@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import JWAddressFormBeneficiaryEmployee from "./components/jw-address-form-ben-employee";
-import JWAddressFormServiceProviderCustomer from "./components/jw-address-form-sp-customer";
 import JWAddressFormServiceProviderEmployee from "./components/jw-address-form-sp-employee";
+import JWContentFormServiceProviderCustomer from "./components/jw-content-form-sp-customer";
 import {
   OnContentSharedWithBeneficiary,
   OnContentSharedWithServiceProvider,
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
-  SecureContentType,
 } from "./components/types";
 import {
   AddressID,
@@ -32,12 +31,14 @@ enum UserType {
 interface Data {
   HostPort: string;
   IndividualID: string;
-  AddressID: string;
+  ContentID: string;
+  ContentType: string;
   ServiceProviderID: string;
   PrimaryToken: string;
   BeneficiaryID: string;
   SecondaryToken: string;
   PreferredBeneficiaries: string;
+  PreferredContentTypes: string;
 }
 
 const TOKEN_STORAGE_KEY: string = "JWAUTH";
@@ -56,7 +57,8 @@ const SPPage: React.FC = () => {
   const [hps, setHPs] = React.useState<Record<string, Data>>({});
 
   const [individualID, setIndividualID] = useState<IndividualID>("");
-  const [addressID, setAddressID] = useState<AddressID>("");
+  const [contentID, setContentID] = useState<string>("");
+  const [contentType, setContentType] = useState<string>("");
 
   const [serviceProviderID, setServiceProviderID] = useState<ServiceProviderID>("");
   const [primaryToken, setPrimaryToken] = useState<PrimaryToken>("");
@@ -66,6 +68,9 @@ const SPPage: React.FC = () => {
 
   const [preferredBeneficiaries, setPreferredBeneficiaries] = useState<BeneficiaryID[]>([]);
   const [preferredBeneficiariesString, setPreferredBeneficiariesString] = useState<string>("");
+
+  const [preferredContentTypes, setPreferredContentTypes] = useState<string[]>([]);
+  const [preferredContentTypesString, setPreferredContentTypesString] = useState<string>("");
 
   const onError = (error: JWError) => {
     if (error instanceof JWErrorAuthenticationRequired) {
@@ -78,16 +83,24 @@ const SPPage: React.FC = () => {
   const setActiveData = (d: Data) => {
     setJWHost(d.HostPort);
     setIndividualID(d.IndividualID);
-    setAddressID(d.AddressID);
+    setContentID(d.ContentID);
+    setContentType(d.ContentType);
     setServiceProviderID(d.ServiceProviderID);
     setPrimaryToken(d.PrimaryToken);
     setBeneficiaryID(d.BeneficiaryID);
     setSecondaryToken(d.SecondaryToken);
+
     /* convert preferred beneficiaries string to array */
     const pbs = d.PreferredBeneficiaries?.trim() || "";
     setPreferredBeneficiariesString(pbs);
     const preferredBeneficiaries = pbs.split(",").map((s) => s.trim());
     setPreferredBeneficiaries(preferredBeneficiaries);
+
+    /* convert preferred beneficiaries string to array */
+    const pcts = d.PreferredContentTypes?.trim() || "";
+    setPreferredContentTypesString(pcts);
+    const preferredContentTypes = pcts.split(",").map((s) => s.trim());
+    setPreferredContentTypes(preferredContentTypes);
   };
 
   const hpChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -101,33 +114,35 @@ const SPPage: React.FC = () => {
   };
 
   const onContentSharedWithServiceProvider: OnContentSharedWithServiceProvider = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     token: PrimaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID(contentID);
+    setContentType(contentType);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
   const onContentUnsharedWithServiceProvider: OnContentUnsharedWithServiceProvider = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID("");
+    setContentType("");
     setServiceProviderID(serviceProviderID);
     setPrimaryToken("");
     setSecondaryToken("");
   };
 
   const onContentSharedWithBeneficiary: OnContentSharedWithBeneficiary = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
@@ -136,7 +151,8 @@ const SPPage: React.FC = () => {
     secondaryToken: SecondaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID(contentID);
+    setContentType(contentType);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(primaryToken);
     setBeneficiaryID(beneficiaryID);
@@ -144,14 +160,15 @@ const SPPage: React.FC = () => {
   };
 
   const onContentUnsharedWithBeneficiary: OnContentUnsharedWithBeneficiary = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     beneficiaryID: BeneficiaryID,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID("");
+    setContentType("");
     setServiceProviderID(serviceProviderID);
     setBeneficiaryID(beneficiaryID);
     setSecondaryToken("");
@@ -160,34 +177,43 @@ const SPPage: React.FC = () => {
   const onUpdate = () => {
     const hostport = jwHost;
     const indID = individualID;
-    const addID = addressID;
+    const contID = contentID;
+    const contType = contentType;
     const spID = serviceProviderID;
     const pTkn = primaryToken;
     const benID = beneficiaryID;
     const sTkn = secondaryToken;
     const prefBenIDs = preferredBeneficiaries;
     const prefBenIDsString = preferredBeneficiariesString;
+    const prefContentTypes = preferredContentTypes;
+    const prefContentTypesString = preferredContentTypesString;
     const dt = new Date().toISOString();
 
     setJWHost(dt);
     setIndividualID(dt);
-    setAddressID(dt);
+    setContentID(dt);
+    setContentType(dt);
     setServiceProviderID(dt);
     setPrimaryToken(dt);
     setBeneficiaryID(dt);
     setSecondaryToken(dt);
     setPreferredBeneficiaries([dt]);
     setPreferredBeneficiariesString(dt);
+    setPreferredContentTypes([dt]);
+    setPreferredContentTypesString(dt);
 
     setJWHost(hostport);
     setIndividualID(indID);
-    setAddressID(addID);
+    setContentID(contID);
+    setContentType(contType);
     setServiceProviderID(spID);
     setPrimaryToken(pTkn);
     setBeneficiaryID(benID);
     setSecondaryToken(sTkn);
     setPreferredBeneficiaries(prefBenIDs);
     setPreferredBeneficiariesString(prefBenIDsString);
+    setPreferredContentTypes(prefContentTypes);
+    setPreferredContentTypesString(prefContentTypesString);
   };
 
   useEffect(() => {
@@ -201,12 +227,14 @@ const SPPage: React.FC = () => {
             const d: Data = {
               HostPort: hostPort,
               IndividualID: data[hostPort]["individualID"],
-              AddressID: data[hostPort]["addressID"],
+              ContentID: data[hostPort]["contentID"],
+              ContentType: data[hostPort]["contentType"],
               ServiceProviderID: data[hostPort]["serviceProviderID"],
               PrimaryToken: data[hostPort]["primaryToken"],
               BeneficiaryID: data[hostPort]["beneficiaryID"],
               SecondaryToken: data[hostPort]["secondaryToken"],
               PreferredBeneficiaries: data[hostPort]["preferredBeneficiaries"],
+              PreferredContentTypes: data[hostPort]["preferredContentTypes"],
             };
             m[hostPort] = d;
           });
@@ -256,6 +284,7 @@ const SPPage: React.FC = () => {
         setSecondaryToken("");
         setBeneficiaryID("");
         setPreferredBeneficiaries([]);
+        setPreferredContentTypes([]);
         return;
       }
       if (cookies["X-USER-TYPE"] === "BENEFICIARY") {
@@ -264,6 +293,7 @@ const SPPage: React.FC = () => {
         setPrimaryToken("");
         setServiceProviderID("");
         setPreferredBeneficiaries([]);
+        setPreferredContentTypes([]);
         return;
       }
     }
@@ -282,10 +312,13 @@ const SPPage: React.FC = () => {
           <div className="grid gap-4">
             <div className="bg-gray-100 p-2">
               {userType === UserType.Customer ? (
-                <JWAddressFormServiceProviderCustomer
+                <JWContentFormServiceProviderCustomer
                   hostPort={jwHost}
                   authToken={authToken}
-                  addressID={addressID}
+                  contentTypeFilter={preferredContentTypes}
+                  contentID={contentID}
+                  contentType={contentType}
+                  addressID={contentID}
                   serviceProviderID={serviceProviderID}
                   primaryToken={primaryToken}
                   beneficiaryIDs={preferredBeneficiaries}
@@ -303,7 +336,7 @@ const SPPage: React.FC = () => {
                   hostPort={jwHost}
                   authToken={authToken}
                   individualID={individualID}
-                  addressID={addressID}
+                  addressID={contentID}
                   serviceProviderID={serviceProviderID}
                   primaryToken={primaryToken}
                   onError={onError}
@@ -316,7 +349,7 @@ const SPPage: React.FC = () => {
                   hostPort={jwHost}
                   authToken={authToken}
                   individualID={individualID}
-                  addressID={addressID}
+                  addressID={contentID}
                   beneficiaryID={beneficiaryID}
                   secondaryToken={secondaryToken}
                   onError={onError}
@@ -417,16 +450,28 @@ const SPPage: React.FC = () => {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
                 ></input>
               </div>
-              <div className="mb-0">
-                <label htmlFor="addressID" className="mb-1 block text-xs font-semibold uppercase">
-                  Address
+              <div className="mb-4">
+                <label htmlFor="contentID" className="mb-1 block text-xs font-semibold uppercase">
+                  Content ID
                 </label>
                 <input
                   type="text"
-                  id="addressID"
+                  id="contentID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  value={addressID}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
+                  value={contentID}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setContentID(event.target.value)}
+                ></input>
+              </div>
+              <div className="mb-0">
+                <label htmlFor="contentType" className="mb-1 block text-xs font-semibold uppercase">
+                  Content Type
+                </label>
+                <input
+                  type="text"
+                  id="contentType"
+                  className="w-full rounded-md border px-3 py-2 text-sm font-normal"
+                  value={contentType}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setContentType(event.target.value)}
                 ></input>
               </div>
             </div>
@@ -448,24 +493,44 @@ const SPPage: React.FC = () => {
                 ></input>
               </div>
               {userType === UserType.Customer ? (
-                <div className="mb-0">
-                  <label htmlFor="preferredBeneficiaries" className="mb-1 block text-xs font-semibold uppercase">
-                    Preferred Beneficiaries
-                  </label>
-                  <textarea
-                    id="preferredBeneficiaries"
-                    className="w-full rounded-md border px-3 py-2 text-sm font-light"
-                    rows={4}
-                    value={preferredBeneficiariesString}
-                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                      /* convert preferred beneficiaries string to array */
-                      const preferredBeneficiariesString = event.target.value;
-                      setPreferredBeneficiariesString(preferredBeneficiariesString);
-                      const preferredBeneficiaries = preferredBeneficiariesString.split(",");
-                      setPreferredBeneficiaries(preferredBeneficiaries);
-                    }}
-                  ></textarea>
-                </div>
+                <>
+                  <div className="mb-4">
+                    <label htmlFor="preferredContentTypes" className="mb-1 block text-xs font-semibold uppercase">
+                      Preferred Content Types
+                    </label>
+                    <textarea
+                      id="preferredContentTypes"
+                      className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                      rows={4}
+                      value={preferredContentTypesString}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        /* convert preferred beneficiaries string to array */
+                        const preferredContentTypesString = event.target.value;
+                        setPreferredContentTypesString(preferredContentTypesString);
+                        const preferredContentTypes = preferredContentTypesString.split(",").map((s) => s.trim());
+                        setPreferredContentTypes(preferredContentTypes);
+                      }}
+                    ></textarea>
+                  </div>
+                  <div className="mb-0">
+                    <label htmlFor="preferredBeneficiaries" className="mb-1 block text-xs font-semibold uppercase">
+                      Preferred Beneficiaries
+                    </label>
+                    <textarea
+                      id="preferredBeneficiaries"
+                      className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                      rows={4}
+                      value={preferredBeneficiariesString}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        /* convert preferred beneficiaries string to array */
+                        const preferredBeneficiariesString = event.target.value;
+                        setPreferredBeneficiariesString(preferredBeneficiariesString);
+                        const preferredBeneficiaries = preferredBeneficiariesString.split(",").map((s) => s.trim());
+                        setPreferredBeneficiaries(preferredBeneficiaries);
+                      }}
+                    ></textarea>
+                  </div>
+                </>
               ) : (
                 <></>
               )}

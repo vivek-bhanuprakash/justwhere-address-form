@@ -22,14 +22,8 @@ export interface UserInfo {
   individualID: string;
 }
 
-export enum SecureContentType {
-  ADDRESS,
-  INSURANCE_POLICY,
-  EMPLOYEE_RECORD,
-}
-
 export type OnContentSharedWithServiceProvider = (
-  contentType: SecureContentType,
+  contentType: string,
   individualID: IndividualID,
   contentID: AddressID | SecureContentID,
   serviceProviderID: ServiceProviderID,
@@ -37,14 +31,14 @@ export type OnContentSharedWithServiceProvider = (
 ) => void;
 
 export type OnContentUnsharedWithServiceProvider = (
-  contentType: SecureContentType,
+  contentType: string,
   individualID: IndividualID,
   contentID: AddressID | SecureContentID,
   serviceProviderID: ServiceProviderID,
 ) => void;
 
 export type OnContentSharedWithBeneficiary = (
-  contentType: SecureContentType,
+  contentType: string,
   individualID: IndividualID,
   contentID: AddressID | SecureContentID,
   serviceProviderID: ServiceProviderID,
@@ -54,7 +48,7 @@ export type OnContentSharedWithBeneficiary = (
 ) => void;
 
 export type OnContentUnsharedWithBeneficiary = (
-  contentType: SecureContentType,
+  contentType: string,
   individualID: IndividualID,
   contentID: AddressID | SecureContentID,
   serviceProviderID: ServiceProviderID,

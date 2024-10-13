@@ -11,7 +11,7 @@ import {
   SecondaryToken,
   ServiceProviderID,
 } from "../util";
-import JWAddressFormServiceProviderCustomer from "./jw-address-form-sp-customer";
+import JWContentFormServiceProviderCustomer from "./jw-content-form-sp-customer";
 import JWLogin, { OnLoginComplete } from "./jw-login";
 import {
   EmbedMode,
@@ -115,7 +115,7 @@ const JWAddress: React.FC<JWAddressProps> = ({
   return (
     <>
       {isLoggedIn ? (
-        <JWAddressFormServiceProviderCustomer
+        <JWContentFormServiceProviderCustomer
           hostPort={hostPort}
           authToken={""}
           // individualID={individualID || ""}

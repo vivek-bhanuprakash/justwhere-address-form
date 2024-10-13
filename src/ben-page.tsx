@@ -7,7 +7,6 @@ import {
   OnContentSharedWithServiceProvider,
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
-  SecureContentType,
 } from "./components/types";
 import { AddressID, BeneficiaryID, IndividualID, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID } from "./util";
 
@@ -21,12 +20,14 @@ enum UserType {
 interface Data {
   HostPort: string;
   IndividualID: string;
-  AddressID: string;
+  ContentID: string;
+  ContentType: string;
   ServiceProviderID: string;
   PrimaryToken: string;
   BeneficiaryID: string;
   SecondaryToken: string;
   PreferredBeneficiaries: string;
+  PreferredContentTypes: string;
 }
 
 const BenPage: React.FC = () => {
@@ -42,7 +43,8 @@ const BenPage: React.FC = () => {
   const [hps, setHPs] = React.useState<Record<string, Data>>({});
 
   const [individualID, setIndividualID] = useState<string>("");
-  const [addressID, setAddressID] = useState<string>("");
+  const [contentID, setContentID] = useState<string>("");
+  const [contentType, setContentType] = useState<string>("");
 
   const [serviceProviderID, setServiceProviderID] = useState("");
   const [primaryToken, setPrimaryToken] = useState<string>("");
@@ -52,6 +54,9 @@ const BenPage: React.FC = () => {
 
   const [preferredBeneficiaries, setPreferredBeneficiaries] = useState<BeneficiaryID[]>([]);
   const [preferredBeneficiariesString, setPreferredBeneficiariesString] = useState<string>("");
+
+  const [preferredContentTypes, setPreferredContentTypes] = useState<string[]>([]);
+  const [preferredContentTypesString, setPreferredContentTypesString] = useState<string>("");
 
   // const onError = (error: JWErrorAuthenticationRequired | JWErrorBadRequest) => {
   //   console.error(error);
@@ -67,7 +72,8 @@ const BenPage: React.FC = () => {
   const setActiveData = (d: Data) => {
     setJWHost(d.HostPort);
     setIndividualID(d.IndividualID);
-    setAddressID(d.AddressID);
+    setContentID(d.ContentID);
+    setContentType(d.ContentType);
     setServiceProviderID(d.ServiceProviderID);
     setPrimaryToken(d.PrimaryToken);
     setBeneficiaryID(d.BeneficiaryID);
@@ -77,6 +83,12 @@ const BenPage: React.FC = () => {
     setPreferredBeneficiariesString(pbs);
     const preferredBeneficiaries = pbs.split(",").map((s) => s.trim());
     setPreferredBeneficiaries(preferredBeneficiaries);
+
+    /* convert preferred beneficiaries string to array */
+    const pcts = d.PreferredContentTypes?.trim() || "";
+    setPreferredContentTypesString(pcts);
+    const preferredContentTypes = pcts.split(",").map((s) => s.trim());
+    setPreferredContentTypes(preferredContentTypes);
   };
 
   const hpChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -90,33 +102,35 @@ const BenPage: React.FC = () => {
   };
 
   const onContentSharedWithServiceProvider: OnContentSharedWithServiceProvider = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     token: PrimaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID(contentID);
+    setContentType(contentType);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(token);
   };
 
   const onContentUnsharedWithServiceProvider: OnContentUnsharedWithServiceProvider = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID("");
+    setContentType("");
     setServiceProviderID(serviceProviderID);
     setPrimaryToken("");
     setSecondaryToken("");
   };
 
   const onContentSharedWithBeneficiary: OnContentSharedWithBeneficiary = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
@@ -125,7 +139,8 @@ const BenPage: React.FC = () => {
     secondaryToken: SecondaryToken,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID(contentID);
+    setContentType(contentType);
     setServiceProviderID(serviceProviderID);
     setPrimaryToken(primaryToken);
     setBeneficiaryID(beneficiaryID);
@@ -133,14 +148,15 @@ const BenPage: React.FC = () => {
   };
 
   const onContentUnsharedWithBeneficiary: OnContentUnsharedWithBeneficiary = (
-    contentType: SecureContentType,
+    contentType: string,
     individualID: IndividualID,
     contentID: AddressID | SecureContentID,
     serviceProviderID: ServiceProviderID,
     beneficiaryID: BeneficiaryID,
   ) => {
     setIndividualID(individualID);
-    setAddressID(contentID);
+    setContentID("");
+    setContentType("");
     setServiceProviderID(serviceProviderID);
     setBeneficiaryID(beneficiaryID);
     setSecondaryToken("");
@@ -149,34 +165,43 @@ const BenPage: React.FC = () => {
   const onUpdate = () => {
     const hostport = jwHost;
     const indID = individualID;
-    const addID = addressID;
+    const contID = contentID;
+    const contType = contentType;
     const spID = serviceProviderID;
     const pTkn = primaryToken;
     const benID = beneficiaryID;
     const sTkn = secondaryToken;
     const prefBenIDs = preferredBeneficiaries;
     const prefBenIDsString = preferredBeneficiariesString;
+    const prefContentTypes = preferredContentTypes;
+    const prefContentTypesString = preferredContentTypesString;
     const dt = new Date().toISOString();
 
     setJWHost(dt);
     setIndividualID(dt);
-    setAddressID(dt);
+    setContentID(dt);
+    setContentType(dt);
     setServiceProviderID(dt);
     setPrimaryToken(dt);
     setBeneficiaryID(dt);
     setSecondaryToken(dt);
     setPreferredBeneficiaries([dt]);
     setPreferredBeneficiariesString(dt);
+    setPreferredContentTypes([dt]);
+    setPreferredContentTypesString(dt);
 
     setJWHost(hostport);
     setIndividualID(indID);
-    setAddressID(addID);
+    setContentID(contID);
+    setContentType(contType);
     setServiceProviderID(spID);
     setPrimaryToken(pTkn);
     setBeneficiaryID(benID);
     setSecondaryToken(sTkn);
     setPreferredBeneficiaries(prefBenIDs);
     setPreferredBeneficiariesString(prefBenIDsString);
+    setPreferredContentTypes(prefContentTypes);
+    setPreferredContentTypesString(prefContentTypesString);
   };
 
   useEffect(() => {
@@ -190,12 +215,14 @@ const BenPage: React.FC = () => {
             const d: Data = {
               HostPort: hostPort,
               IndividualID: data[hostPort]["individualID"],
-              AddressID: data[hostPort]["addressID"],
+              ContentID: data[hostPort]["contentID"],
+              ContentType: data[hostPort]["contentType"],
               ServiceProviderID: data[hostPort]["serviceProviderID"],
               PrimaryToken: data[hostPort]["primaryToken"],
               BeneficiaryID: data[hostPort]["beneficiaryID"],
               SecondaryToken: data[hostPort]["secondaryToken"],
               PreferredBeneficiaries: data[hostPort]["preferredBeneficiaries"],
+              PreferredContentTypes: data[hostPort]["preferredContentTypes"],
             };
             m[hostPort] = d;
           });
@@ -240,6 +267,7 @@ const BenPage: React.FC = () => {
         setSecondaryToken("");
         setBeneficiaryID("");
         setPreferredBeneficiaries([]);
+        setPreferredContentTypes([]);
         return;
       }
       if (cookies["X-USER-TYPE"] === "BENEFICIARY") {
@@ -248,6 +276,7 @@ const BenPage: React.FC = () => {
         setPrimaryToken("");
         setServiceProviderID("");
         setPreferredBeneficiaries([]);
+        setPreferredContentTypes([]);
         return;
       }
     }
@@ -269,7 +298,7 @@ const BenPage: React.FC = () => {
                 embedAs={EmbedMode.BENEFICIARY}
                 hostPort={jwHost}
                 individualID={individualID}
-                addressID={addressID}
+                addressID={contentID}
                 serviceProviderID={serviceProviderID}
                 primaryToken={primaryToken}
                 secondaryToken={secondaryToken}
@@ -367,8 +396,8 @@ const BenPage: React.FC = () => {
                   type="text"
                   id="addressID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
-                  value={addressID}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAddressID(event.target.value)}
+                  value={contentID}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => setContentID(event.target.value)}
                 ></input>
               </div>
             </div>

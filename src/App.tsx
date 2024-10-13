@@ -1,5 +1,6 @@
+import "flowbite";
 import { CookiesProvider, withCookies } from "react-cookie";
-import { BrowserRouter as Router, Link, Route, Routes } from "react-router-dom";
+import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 import BenPage from "./ben-page";
 import SPPage from "./sp-page";
