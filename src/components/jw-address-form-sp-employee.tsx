@@ -11,7 +11,7 @@ import {
   JWError,
   PrimaryToken,
   PrimaryTokenAddressRequest,
-  ServiceProviderID
+  ServiceProviderID,
 } from "../util";
 import AddressForm from "./internal/address";
 import { OnErrorFcn, UserInfo } from "./types";
@@ -35,7 +35,7 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
   primaryToken,
   onError,
 }) => {
-  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "" });
+  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "", serviceProviderID: "", token: "" });
   const [address, setAddress] = useState<Address>();
 
   const maskFields = (address: Address): Address => {
@@ -113,10 +113,15 @@ const JWAddressFormServiceProviderEmployee: React.FC<AddressProps> = ({
       return;
     }
 
-    const req: CurrentUserInfoRequest = { hostPort: hostPort };
+    const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
     GetCurrentUserInfo(req)
       .then((response) => {
-        setCurrentUserInfo({ userID: response.userID.trim(), individualID: response.individualID.trim() });
+        setCurrentUserInfo({
+          userID: response.userID.trim(),
+          individualID: response.individualID.trim(),
+          serviceProviderID: response.serviceProviderID.trim(),
+          token: response.token.trim(),
+        });
       })
       .catch((error) => {
         console.error("JustWhere: error fetching current user info: ", error);

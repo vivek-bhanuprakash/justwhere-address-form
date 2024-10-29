@@ -1,24 +1,8 @@
-import { AxiosError } from "axios";
-import { Configuration, PrimaryTokenInput, SecondaryTokenInput, TokenApi } from "../internal/sdk/";
-import {
-  AddressID,
-  BeneficiaryID,
-  GetAuthToken,
-  IndividualID,
-  JWError,
-  JWErrorAuthenticationRequired,
-  JWErrorBadRequest,
-  JWErrorForbidden,
-  JWErrorNotFound,
-  JWErrorServerError,
-  PrimaryToken,
-  SecondaryToken,
-  ServiceProviderID,
-} from "../types/types";
+import { PrimaryTokenInput, SecondaryTokenInput, TokenApi } from "../internal/sdk/";
+import { throwError } from "../types/errors";
+import { AddressID, BeneficiaryID, CreateAPIConfig, IndividualID, JWAPIRequest, PrimaryToken, SecondaryToken, ServiceProviderID } from "../types/types";
 
-export interface PrimaryTokenRequest {
-  hostPort: string;
-  authToken?: string;
+export interface PrimaryTokenRequest extends JWAPIRequest {
   individualID: IndividualID;
   addressID: AddressID;
   serviceProviderID: ServiceProviderID;
@@ -36,15 +20,7 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
     serviceProviderID: request.serviceProviderID,
   };
 
-  const authToken = request.authToken || GetAuthToken().token;
-
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new TokenApi(config);
 
@@ -60,9 +36,7 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
   }
 };
 
-export interface DisablePrimaryTokenRequest {
-  hostPort: string;
-  authToken?: string;
+export interface DisablePrimaryTokenRequest extends JWAPIRequest {
   individualID: IndividualID;
   addressID: AddressID;
   serviceProviderID: ServiceProviderID;
@@ -79,15 +53,7 @@ export const DisablePrimaryToken = async (request: DisablePrimaryTokenRequest): 
     serviceProviderID: request.serviceProviderID,
   };
 
-  const authToken = request.authToken || GetAuthToken().token;
-
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new TokenApi(config);
 
@@ -101,9 +67,7 @@ export const DisablePrimaryToken = async (request: DisablePrimaryTokenRequest): 
   }
 };
 
-export interface SecondaryTokenRequest {
-  hostPort: string;
-  authToken?: string;
+export interface SecondaryTokenRequest extends JWAPIRequest {
   serviceProviderID: ServiceProviderID;
   beneficiaryID: BeneficiaryID;
   token: PrimaryToken;
@@ -121,15 +85,7 @@ export const GenererateSecondaryToken = async (request: SecondaryTokenRequest): 
     token: request.token,
   };
 
-  const authToken = request.authToken || GetAuthToken().token;
-
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new TokenApi(config);
 
@@ -144,9 +100,7 @@ export const GenererateSecondaryToken = async (request: SecondaryTokenRequest): 
   }
 };
 
-export interface DisableSecondaryTokenRequest {
-  hostPort: string;
-  authToken?: string;
+export interface DisableSecondaryTokenRequest extends JWAPIRequest {
   serviceProviderID: ServiceProviderID;
   beneficiaryID: BeneficiaryID;
   secondaryToken: SecondaryToken;
@@ -163,15 +117,7 @@ export const DisableSecondaryToken = async (request: DisableSecondaryTokenReques
     token: request.secondaryToken,
   };
 
-  const authToken = request.authToken || GetAuthToken().token;
-
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new TokenApi(config);
 
@@ -183,31 +129,4 @@ export const DisableSecondaryToken = async (request: DisableSecondaryTokenReques
   } catch (e) {
     return throwError(e);
   }
-};
-
-const throwError = (e: any) => {
-  if (e instanceof AxiosError) {
-    // if error is 400, then throw a JWErrorBadRequest
-    if (e.response && e.response.status === 400) {
-      throw new JWErrorBadRequest("bad request");
-    }
-    // if error is 401, then throw a JWErrorAuthenticationRequired
-    if (e.response && e.response.status === 401) {
-      throw new JWErrorAuthenticationRequired("authentication required");
-    }
-    // if error is 403, then throw a JWErrorForbidden
-    if (e.response && e.response.status === 403) {
-      throw new JWErrorForbidden("forbidden");
-    }
-    // if error is 404, then throw a JWErrorNotFound
-    if (e.response && e.response.status === 404) {
-      throw new JWErrorNotFound("not found");
-    }
-    // if error is 5xx, then throw a JWErrorServerError
-    if (e.response && e.response.status >= 500) {
-      throw new JWErrorServerError("server error");
-    }
-  }
-
-  throw new JWError((e as Error).message);
 };

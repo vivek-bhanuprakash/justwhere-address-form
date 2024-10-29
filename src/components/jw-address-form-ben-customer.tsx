@@ -3,8 +3,8 @@ import {
   Address,
   AddressID,
   Beneficiary,
+  BeneficiaryAddressSharesRequest,
   BeneficiaryID,
-  BeneficiarySharesRequest,
   CurrentUserInfoRequest,
   DisablePrimaryToken,
   DisablePrimaryTokenRequest,
@@ -12,10 +12,10 @@ import {
   DisableSecondaryTokenRequest,
   GenereratePrimaryToken,
   GenererateSecondaryToken,
+  GetAddressSharesWithBeneficiary,
+  GetAddressSharesWithServiceProvider,
   GetCurrentUserInfo,
   GetOwnerAddresses,
-  GetSharesWithBeneficiary,
-  GetSharesWithServiceProvider,
   IndividualID,
   IsValidURL,
   JWError,
@@ -26,8 +26,8 @@ import {
   SecondaryToken,
   SecondaryTokenRequest,
   ServiceProvider,
+  ServiceProviderAddressSharesRequest,
   ServiceProviderID,
-  ServiceProviderSharesRequest,
 } from "../util";
 
 import Input from "./internal/input";
@@ -61,7 +61,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 }) => {
   const [internalIndividualID, setInternalIndividualID] = useState<IndividualID>("");
   const [internalAddressID, setInternalAddressID] = useState<AddressID>("");
-  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "" });
+  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "", serviceProviderID: "", token: "" });
   const [myAddresses, setMyAddresses] = useState<Record<AddressID, Address>>({});
   const [address, setAddress] = useState<Address>();
 
@@ -112,6 +112,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
       setReprocessTwo(false);
       const request: SecondaryTokenRequest = {
         hostPort,
+        authToken,
         serviceProviderID: serviceProvider?.ID || "",
         beneficiaryID: selectedBeneficiary?.ID || "",
         token: internalPrimaryToken.current || "",
@@ -140,6 +141,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
       const request: PrimaryTokenRequest = {
         hostPort: hostPort,
+        authToken,
         individualID: internalIndividualID || "",
         addressID: address?.ID || "",
         serviceProviderID: serviceProviderID || "",
@@ -165,6 +167,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
       const request: DisablePrimaryTokenRequest = {
         hostPort: hostPort,
+        authToken,
         individualID: internalIndividualID || "",
         addressID: address?.ID || "",
         serviceProviderID: serviceProviderID || "",
@@ -189,6 +192,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
       try {
         const request: DisableSecondaryTokenRequest = {
           hostPort: hostPort,
+          authToken,
           serviceProviderID: serviceProvider?.ID || "",
           beneficiaryID: selectedBeneficiary?.ID || "",
           secondaryToken: token || "",
@@ -224,10 +228,15 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
       return;
     }
 
-    const req: CurrentUserInfoRequest = { hostPort: hostPort };
+    const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
     GetCurrentUserInfo(req)
       .then((response) => {
-        setCurrentUserInfo({ userID: response.userID.trim(), individualID: response.individualID.trim() });
+        setCurrentUserInfo({
+          userID: response.userID.trim(),
+          individualID: response.individualID.trim(),
+          serviceProviderID: response.serviceProviderID.trim(),
+          token: response.token.trim(),
+        });
         setInternalIndividualID(response.individualID.trim());
       })
       .catch((error) => {
@@ -243,7 +252,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
     if (currentUserInfo.individualID.trim().length === 0) return;
 
     if (serviceProviderID !== undefined && typeof serviceProviderID === "string" && serviceProviderID.trim().length !== 0) {
-      const req: ServiceProviderInfoRequest = { hostPort: hostPort, serviceProviderID: serviceProviderID };
+      const req: ServiceProviderInfoRequest = { hostPort: hostPort, authToken: authToken, serviceProviderID: serviceProviderID };
       GetServiceProviderInfo(req)
         .then((response) => {
           setServiceProvider(response.serviceProvider);
@@ -298,7 +307,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
     if (!addressProvided && !addressSelected) {
       // fetch addresses and select first address
-      const request: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
+      const request: OwnerAddressesRequest = { hostPort: hostPort, authToken: authToken, individualID: currentUserInfo.individualID };
       GetOwnerAddresses(request)
         .then((response) => {
           setMyAddresses(response.addresses);
@@ -310,7 +319,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
     }
 
     if (!addressProvided && addressSelected) {
-      const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
+      const req: OwnerAddressesRequest = { hostPort: hostPort, authToken: authToken, individualID: currentUserInfo.individualID };
       GetOwnerAddresses(req)
         .then((response) => {
           setMyAddresses(response.addresses);
@@ -329,7 +338,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
       // check if addressID belongs to current logged in user
       // if yes, then set internalAddressID to addressID
       // if no, then set internalAddressID to first address in myAddresses
-      const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
+      const req: OwnerAddressesRequest = { hostPort: hostPort, authToken: authToken, individualID: currentUserInfo.individualID };
       GetOwnerAddresses(req)
         .then((response) => {
           setMyAddresses(response.addresses);
@@ -347,7 +356,7 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
     if (addressProvided && addressSelected) {
       if (providedAddressID !== selectedAddressID) {
-        const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
+        const req: OwnerAddressesRequest = { hostPort: hostPort, authToken: authToken, individualID: currentUserInfo.individualID };
         GetOwnerAddresses(req)
           .then((response) => {
             setMyAddresses(response.addresses);
@@ -384,8 +393,13 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
     const primaryTokenProvided = primaryToken !== undefined && typeof primaryToken === "string" && primaryToken.trim().length !== 0;
 
     // is this address already shared with the service provider?
-    const req: ServiceProviderSharesRequest = { hostPort: hostPort, addressID: address?.ID || "", serviceProviderID: serviceProviderID };
-    GetSharesWithServiceProvider(req)
+    const req: ServiceProviderAddressSharesRequest = {
+      hostPort: hostPort,
+      authToken: authToken,
+      addressID: address?.ID || "",
+      serviceProviderID: serviceProviderID,
+    };
+    GetAddressSharesWithServiceProvider(req)
       .then((response) => {
         if (response.shares.length === 0) {
           console.debug("JustWhere: address is not shared with service provider");
@@ -450,8 +464,13 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
     if (serviceProvider === undefined || serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) return;
     if (selectedBeneficiary === undefined || selectedBeneficiary.ID === undefined || selectedBeneficiary.ID.trim().length === 0) return;
 
-    const req: BeneficiarySharesRequest = { hostPort: hostPort, addressID: address?.ID || "", beneficiaryID: selectedBeneficiary.ID };
-    GetSharesWithBeneficiary(req).then((response) => {
+    const req: BeneficiaryAddressSharesRequest = {
+      hostPort: hostPort,
+      authToken: authToken,
+      addressID: address?.ID || "",
+      beneficiaryID: selectedBeneficiary.ID,
+    };
+    GetAddressSharesWithBeneficiary(req).then((response) => {
       console.debug("JustWhere: selected address is shared", response.shares.length, "time(s) with this beneficiary overall");
       // only keep shares that match the current service provider and beneficiary for this address
       response.shares = response.shares.filter((share) => {

@@ -66,6 +66,8 @@ const JWAddress: React.FC<JWAddressProps> = ({
   const emptyUserInfo: UserInfo = {
     userID: "",
     individualID: "",
+    serviceProviderID: "",
+    token: "",
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -75,6 +77,8 @@ const JWAddress: React.FC<JWAddressProps> = ({
     const userInfo: UserInfo = {
       userID: userID,
       individualID: individualID,
+      serviceProviderID: "",
+      token: "",
     };
 
     setCurrentUserInfo(userInfo);
@@ -86,6 +90,8 @@ const JWAddress: React.FC<JWAddressProps> = ({
       const ui: UserInfo = {
         userID: "",
         individualID: "",
+        serviceProviderID: "",
+        token: "",
       };
       setCurrentUserInfo(ui);
       return setIsLoggedIn(false);
@@ -100,7 +106,7 @@ const JWAddress: React.FC<JWAddressProps> = ({
       if (hostPort !== undefined && hostPort.trim().length > 0) {
         try {
           setIsLoggedIn(false);
-          const request: CurrentUserInfoRequest = { hostPort: hostPort };
+          const request: CurrentUserInfoRequest = { hostPort: hostPort, authToken: "" };
           const response = await GetCurrentUserInfo(request);
           if (response.individualID === undefined) return;
           onLoginComplete(response.userID, response.individualID);
@@ -118,8 +124,10 @@ const JWAddress: React.FC<JWAddressProps> = ({
         <JWContentFormServiceProviderCustomer
           hostPort={hostPort}
           authToken={""}
+          contentTypeFilter={[]}
+          contentID={addressID}
+          contentType={""}
           // individualID={individualID || ""}
-          addressID={addressID}
           serviceProviderID={serviceProviderID}
           primaryToken={primaryToken}
           beneficiaryIDs={beneficiaryIDs}

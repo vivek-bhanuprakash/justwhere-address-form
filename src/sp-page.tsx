@@ -73,8 +73,16 @@ const SPPage: React.FC = () => {
   const [preferredContentTypesString, setPreferredContentTypesString] = useState<string>("");
 
   const onError = (error: JWError) => {
+    if (jwHost === undefined || jwHost.trim().length === 0) {
+      console.debug("App: waiting for JW host to be set");
+      return;
+    }
+    if (authToken === undefined || authToken.trim().length === 0) {
+      console.debug("App: waiting for JW auth token to be set");
+      return;
+    }
     if (error instanceof JWErrorAuthenticationRequired) {
-      // Unauthorized
+      console.debug("App: JustWhere authentication required");
       window.open(`${jwHost}/api/login`, "_top");
       return;
     }
@@ -248,6 +256,7 @@ const SPPage: React.FC = () => {
     let token = sessionStorage.getItem(TOKEN_STORAGE_KEY) || "";
     if (token !== "") {
       token = token.split("Bearer ")[1];
+      console.debug("token:", token.substring(0, 5) + "..." + token.substring(token.length - 5));
       setAuthToken(token);
     }
 
@@ -311,14 +320,13 @@ const SPPage: React.FC = () => {
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="grid gap-4">
             <div className="bg-gray-100 p-2">
-              {userType === UserType.Customer ? (
+              {userType === UserType.Customer && jwHost !== undefined && jwHost.trim().length > 0 && authToken !== undefined && authToken.trim().length > 0 ? (
                 <JWContentFormServiceProviderCustomer
                   hostPort={jwHost}
                   authToken={authToken}
                   contentTypeFilter={preferredContentTypes}
                   contentID={contentID}
                   contentType={contentType}
-                  addressID={contentID}
                   serviceProviderID={serviceProviderID}
                   primaryToken={primaryToken}
                   beneficiaryIDs={preferredBeneficiaries}
@@ -331,7 +339,11 @@ const SPPage: React.FC = () => {
               ) : (
                 <></>
               )}
-              {userType === UserType.SPEmployee ? (
+              {userType === UserType.SPEmployee &&
+              jwHost !== undefined &&
+              jwHost.trim().length > 0 &&
+              authToken !== undefined &&
+              authToken.trim().length > 0 ? (
                 <JWAddressFormServiceProviderEmployee
                   hostPort={jwHost}
                   authToken={authToken}
@@ -344,7 +356,11 @@ const SPPage: React.FC = () => {
               ) : (
                 <></>
               )}
-              {userType === UserType.BNEmployee ? (
+              {userType === UserType.BNEmployee &&
+              jwHost !== undefined &&
+              jwHost.trim().length > 0 &&
+              authToken !== undefined &&
+              authToken.trim().length > 0 ? (
                 <JWAddressFormBeneficiaryEmployee
                   hostPort={jwHost}
                   authToken={authToken}
@@ -364,7 +380,7 @@ const SPPage: React.FC = () => {
                   <h2 className="mb-4 text-lg font-semibold uppercase">Output</h2>
                   <div className="mb-0">
                     <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                      Service Address Key
+                      Service Content Key
                     </label>
                     <textarea
                       id="primaryToken"
@@ -376,7 +392,7 @@ const SPPage: React.FC = () => {
                   </div>
                   <div className="mt-5">
                     <label htmlFor="secondaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                      Beneficiary Address Key
+                      Beneficiary Content Key
                     </label>
                     <textarea
                       id="secondaryToken"
@@ -537,7 +553,7 @@ const SPPage: React.FC = () => {
               {userType === UserType.SPEmployee ? (
                 <div className="mb-0">
                   <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                    Address Key
+                    Content Key
                   </label>
                   <textarea
                     id="primaryToken"

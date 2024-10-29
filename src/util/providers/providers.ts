@@ -1,17 +1,6 @@
-import { AxiosError } from "axios";
 import { BeneficiaryApi, BeneficiaryLimited, Configuration, GenericServiceProvider, ServiceproviderApi } from "../internal/sdk/";
-import {
-  Beneficiary,
-  BeneficiaryID,
-  GetAuthToken,
-  JWError,
-  JWErrorAuthenticationRequired,
-  JWErrorBadRequest,
-  JWErrorForbidden,
-  JWErrorNotFound,
-  JWErrorServerError,
-  ServiceProvider,
-} from "../types/types";
+import { throwError } from "../types/errors";
+import { Beneficiary, BeneficiaryID, GetAuthToken, ServiceProvider } from "../types/types";
 
 export interface BeneficiaryInfoRequest {
   hostPort: string;
@@ -125,31 +114,4 @@ const convertToServiceProvider = (data: GenericServiceProvider): ServiceProvider
 
 const propertyValue = (data: any, key: string): string => {
   return (data?.tags?.[key]?.Value as string) || "";
-};
-
-const throwError = (e: any) => {
-  if (e instanceof AxiosError) {
-    // if error is 400, then throw a JWErrorBadRequest
-    if (e.response && e.response.status === 400) {
-      throw new JWErrorBadRequest("bad request");
-    }
-    // if error is 401, then throw a JWErrorAuthenticationRequired
-    if (e.response && e.response.status === 401) {
-      throw new JWErrorAuthenticationRequired("authentication required");
-    }
-    // if error is 403, then throw a JWErrorForbidden
-    if (e.response && e.response.status === 403) {
-      throw new JWErrorForbidden("forbidden");
-    }
-    // if error is 404, then throw a JWErrorNotFound
-    if (e.response && e.response.status === 404) {
-      throw new JWErrorNotFound("not found");
-    }
-    // if error is 5xx, then throw a JWErrorServerError
-    if (e.response && e.response.status >= 500) {
-      throw new JWErrorServerError("server error");
-    }
-  }
-
-  throw new JWError((e as Error).message);
 };

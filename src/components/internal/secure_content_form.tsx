@@ -1,16 +1,17 @@
-import { SecureContent, SecureContentTemplateField } from "../../util";
+import { GenericSecureContent, SecureContentTemplateField } from "../../util";
 import Input from "./input";
 import Label from "./label";
+import TextArea from "./textarea";
 
 interface SecureContentFormProps {
-  contentTemplate: SecureContentTemplateField[];
-  contentData: SecureContent;
+  contentTemplateFields: SecureContentTemplateField[];
+  contentData: GenericSecureContent;
 }
 
-const SecureContentForm: React.FC<SecureContentFormProps> = ({ contentTemplate, contentData }) => {
+const SecureContentForm: React.FC<SecureContentFormProps> = ({ contentTemplateFields, contentData }) => {
   return (
     <div className="grid gap-3">
-      {contentTemplate.map((templateField) => {
+      {contentTemplateFields.map((templateField) => {
         const dataField = contentData.Content[templateField.ID];
         if (dataField !== undefined) {
           return (
@@ -19,7 +20,7 @@ const SecureContentForm: React.FC<SecureContentFormProps> = ({ contentTemplate, 
               {templateField.Type === "alphanumeric" ? (
                 <Input type="text" id={templateField.ID} name={templateField.ID} placeholder={templateField.ID} value={dataField || ""} />
               ) : templateField.Type === "textarea" ? (
-                <Input type="textarea" id={templateField.ID} name={templateField.ID} placeholder={templateField.ID} value={dataField || ""} />
+                <TextArea id={templateField.ID} name={templateField.ID} placeholder={templateField.ID} value={dataField || ""} rows={6} />
               ) : (
                 <></>
               )}

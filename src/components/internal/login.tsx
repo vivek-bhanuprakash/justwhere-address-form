@@ -35,7 +35,7 @@ const Login: React.FC<LoginProps> = ({ hostPort, onComplete, onRetriesExceeded, 
     }
 
     try {
-      const u = await GetCurrentUserInfo({ hostPort });
+      const u = await GetCurrentUserInfo({ hostPort, authToken: "" });
       if (typeof u.individualID === "string" && u.individualID.length > 0) {
         return onComplete(u.userID, u.individualID);
       }
@@ -72,7 +72,7 @@ const Login: React.FC<LoginProps> = ({ hostPort, onComplete, onRetriesExceeded, 
       watchDogRetries = 0;
     }
 
-    if (!(await IsLoggedIn(hostPort))) {
+    if (!(await IsLoggedIn(hostPort, ""))) {
       window.open(`${hostPort}/api/login`, "_blank");
       watchDogRetries = 0;
       watchDogTimerID = window.setTimeout(runWatchDog, WATCHDOG_INTERVAL);

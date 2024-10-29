@@ -52,7 +52,7 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError })
   useEffect(() => {
     const fnEffect = async () => {
       try {
-        const request: CurrentUserInfoRequest = { hostPort: hostPort };
+        const request: CurrentUserInfoRequest = { hostPort: hostPort, authToken: "" };
         const response = await GetCurrentUserInfo(request);
         loginHandler(response.userID, response.individualID);
       } catch (e) {

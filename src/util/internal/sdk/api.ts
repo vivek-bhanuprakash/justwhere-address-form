@@ -294,6 +294,80 @@ export interface BeneficiaryLimited {
 export type CombinedResponse = any;
 
 /**
+ *
+ * @export
+ * @interface CreateTemplate201Response
+ */
+export interface CreateTemplate201Response {
+    /**
+     * Unique identifier of the template
+     * @type {string}
+     * @memberof CreateTemplate201Response
+     */
+    'id': string;
+    /**
+     * Unique identifier of the service provider
+     * @type {string}
+     * @memberof CreateTemplate201Response
+     */
+    'serviceproviderid': string;
+    /**
+     * Name of the template
+     * @type {string}
+     * @memberof CreateTemplate201Response
+     */
+    'Name'?: string;
+    /**
+     * URL of the template
+     * @type {string}
+     * @memberof CreateTemplate201Response
+     */
+    'URL'?: string;
+    /**
+     *
+     * @type {object}
+     * @memberof CreateTemplate201Response
+     */
+    'Tags'?: object;
+}
+/**
+ *
+ * @export
+ * @interface CreateTemplateRequest
+ */
+export interface CreateTemplateRequest {
+    /**
+     * Unique identifier of the template
+     * @type {string}
+     * @memberof CreateTemplateRequest
+     */
+    'id': string;
+    /**
+     * Unique identifier of the service provider
+     * @type {string}
+     * @memberof CreateTemplateRequest
+     */
+    'serviceproviderid': string;
+    /**
+     * Name of the template
+     * @type {string}
+     * @memberof CreateTemplateRequest
+     */
+    'Name'?: string;
+    /**
+     * URL of the template
+     * @type {string}
+     * @memberof CreateTemplateRequest
+     */
+    'URL'?: string;
+    /**
+     *
+     * @type {object}
+     * @memberof CreateTemplateRequest
+     */
+    'Tags'?: object;
+}
+/**
  * @type GenericServiceProvider
  * @export
  */
@@ -921,6 +995,12 @@ export interface UserInfo {
      * @memberof UserInfo
      */
     'Gmailaccesstoken'?: string;
+    /**
+     * Default Service Provider ID
+     * @type {string}
+     * @memberof UserInfo
+     */
+    'DefaultServiceProvider'?: string;
     /**
      * valid authorization till
      * @type {number}
@@ -2603,6 +2683,111 @@ export class IndividualsApi extends BaseAPI {
 
 
 /**
+ * LoginApi - axios parameter creator
+ * @export
+ */
+export const LoginApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Fetches the login page in HTML format.
+         * @summary Returns the login page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLoginPage: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/login`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * LoginApi - functional programming interface
+ * @export
+ */
+export const LoginApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = LoginApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * Fetches the login page in HTML format.
+         * @summary Returns the login page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getLoginPage(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getLoginPage(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['LoginApi.getLoginPage']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * LoginApi - factory interface
+ * @export
+ */
+export const LoginApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = LoginApiFp(configuration)
+    return {
+        /**
+         * Fetches the login page in HTML format.
+         * @summary Returns the login page.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLoginPage(options?: any): AxiosPromise<string> {
+            return localVarFp.getLoginPage(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * LoginApi - object-oriented interface
+ * @export
+ * @class LoginApi
+ * @extends {BaseAPI}
+ */
+export class LoginApi extends BaseAPI {
+    /**
+     * Fetches the login page in HTML format.
+     * @summary Returns the login page.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof LoginApi
+     */
+    public getLoginPage(options?: RawAxiosRequestConfig) {
+        return LoginApiFp(this.configuration).getLoginPage(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * NotificationApi - axios parameter creator
  * @export
  */
@@ -2896,20 +3081,22 @@ export const DeleteNotificationEntitytypeEnum = {
     User: 'user',
     Individual: 'individual',
     Serviceprovider: 'serviceprovider',
-    Beneficiary: 'beneficiary'
+    Beneficiary: 'beneficiary',
+    Securedcontent: 'securedcontent'
 } as const;
 export type DeleteNotificationEntitytypeEnum = typeof DeleteNotificationEntitytypeEnum[keyof typeof DeleteNotificationEntitytypeEnum];
 /**
  * @export
  */
-// export const GetNotificationDetailsEntitytypeEnum = {
-//     Account: 'account',
-//     User: 'user',
-//     Individual: 'individual',
-//     Serviceprovider: 'serviceprovider',
-//     Beneficiary: 'beneficiary'
-// } as const;
-// export type GetNotificationDetailsEntitytypeEnum = typeof GetNotificationDetailsEntitytypeEnum[keyof typeof GetNotificationDetailsEntitytypeEnum];
+export const GetNotificationDetailsEntitytypeEnum = {
+    Account: 'account',
+    User: 'user',
+    Individual: 'individual',
+    Serviceprovider: 'serviceprovider',
+    Beneficiary: 'beneficiary',
+    Securedcontent: 'securedcontent'
+} as const;
+export type GetNotificationDetailsEntitytypeEnum = typeof GetNotificationDetailsEntitytypeEnum[keyof typeof GetNotificationDetailsEntitytypeEnum];
 /**
  * @export
  */
@@ -2918,7 +3105,8 @@ export const UpdateNotificationEntitytypeEnum = {
     User: 'user',
     Individual: 'individual',
     Serviceprovider: 'serviceprovider',
-    Beneficiary: 'beneficiary'
+    Beneficiary: 'beneficiary',
+    Securedcontent: 'securedcontent'
 } as const;
 export type UpdateNotificationEntitytypeEnum = typeof UpdateNotificationEntitytypeEnum[keyof typeof UpdateNotificationEntitytypeEnum];
 
@@ -3128,20 +3316,22 @@ export const GetAllNotificationsEntitytypeEnum = {
     User: 'user',
     Individual: 'individual',
     Serviceprovider: 'serviceprovider',
-    Beneficiary: 'beneficiary'
+    Beneficiary: 'beneficiary',
+    Securedcontent: 'securedcontent'
 } as const;
 export type GetAllNotificationsEntitytypeEnum = typeof GetAllNotificationsEntitytypeEnum[keyof typeof GetAllNotificationsEntitytypeEnum];
 /**
  * @export
  */
-export const GetNotificationDetailsEntitytypeEnum = {
-    Account: 'account',
-    User: 'user',
-    Individual: 'individual',
-    Serviceprovider: 'serviceprovider',
-    Beneficiary: 'beneficiary'
-} as const;
-export type GetNotificationDetailsEntitytypeEnum = typeof GetNotificationDetailsEntitytypeEnum[keyof typeof GetNotificationDetailsEntitytypeEnum];
+// export const GetNotificationDetailsEntitytypeEnum = {
+//     Account: 'account',
+//     User: 'user',
+//     Individual: 'individual',
+//     Serviceprovider: 'serviceprovider',
+//     Beneficiary: 'beneficiary',
+//     Securedcontent: 'securedcontent'
+// } as const;
+// export type GetNotificationDetailsEntitytypeEnum = typeof GetNotificationDetailsEntitytypeEnum[keyof typeof GetNotificationDetailsEntitytypeEnum];
 
 
 /**
@@ -5985,6 +6175,421 @@ export class SharedSecuredcontentApi extends BaseAPI {
 
 
 /**
+ * TemplatesApi - axios parameter creator
+ * @export
+ */
+export const TemplatesApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         *
+         * @summary Create a new template
+         * @param {CreateTemplateRequest} createTemplateRequest Template object to be created; make sure that the ID is 00000000-0000-0000-0000-000000000000
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemplate: async (createTemplateRequest: CreateTemplateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'createTemplateRequest' is not null or undefined
+            assertParamExists('createTemplate', 'createTemplateRequest', createTemplateRequest)
+            const localVarPath = `/templates`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createTemplateRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @summary Delete a template by ID
+         * @param {string} id The UUID of the template to delete
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteTemplateById: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteTemplateById', 'id', id)
+            const localVarPath = `/templates/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @summary Get a template by ID
+         * @param {string} id The UUID of the template to retrieve
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getTemplateById: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getTemplateById', 'id', id)
+            const localVarPath = `/templates/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @summary Get template IDs by ServiceProviderID
+         * @param {string} serviceproviderid The UUID of the service provider
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getTemplatesByServiceProviderId: async (serviceproviderid: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'serviceproviderid' is not null or undefined
+            assertParamExists('getTemplatesByServiceProviderId', 'serviceproviderid', serviceproviderid)
+            const localVarPath = `/templates/serviceprovider/{serviceproviderid}`
+                .replace(`{${"serviceproviderid"}}`, encodeURIComponent(String(serviceproviderid)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         *
+         * @summary Update an existing template by ID
+         * @param {string} id The UUID of the template to update
+         * @param {CreateTemplate201Response} createTemplate201Response Template object that needs to be updated
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateTemplateById: async (id: string, createTemplate201Response: CreateTemplate201Response, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateTemplateById', 'id', id)
+            // verify required parameter 'createTemplate201Response' is not null or undefined
+            assertParamExists('updateTemplateById', 'createTemplate201Response', createTemplate201Response)
+            const localVarPath = `/templates/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createTemplate201Response, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * TemplatesApi - functional programming interface
+ * @export
+ */
+export const TemplatesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = TemplatesApiAxiosParamCreator(configuration)
+    return {
+        /**
+         *
+         * @summary Create a new template
+         * @param {CreateTemplateRequest} createTemplateRequest Template object to be created; make sure that the ID is 00000000-0000-0000-0000-000000000000
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createTemplate(createTemplateRequest: CreateTemplateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CreateTemplate201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemplate(createTemplateRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TemplatesApi.createTemplate']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @summary Delete a template by ID
+         * @param {string} id The UUID of the template to delete
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteTemplateById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteTemplateById(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TemplatesApi.deleteTemplateById']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @summary Get a template by ID
+         * @param {string} id The UUID of the template to retrieve
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getTemplateById(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<CreateTemplate201Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getTemplateById(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TemplatesApi.getTemplateById']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @summary Get template IDs by ServiceProviderID
+         * @param {string} serviceproviderid The UUID of the service provider
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getTemplatesByServiceProviderId(serviceproviderid: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<string>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getTemplatesByServiceProviderId(serviceproviderid, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TemplatesApi.getTemplatesByServiceProviderId']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         *
+         * @summary Update an existing template by ID
+         * @param {string} id The UUID of the template to update
+         * @param {CreateTemplate201Response} createTemplate201Response Template object that needs to be updated
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateTemplateById(id: string, createTemplate201Response: CreateTemplate201Response, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateTemplateById(id, createTemplate201Response, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TemplatesApi.updateTemplateById']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * TemplatesApi - factory interface
+ * @export
+ */
+export const TemplatesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = TemplatesApiFp(configuration)
+    return {
+        /**
+         *
+         * @summary Create a new template
+         * @param {CreateTemplateRequest} createTemplateRequest Template object to be created; make sure that the ID is 00000000-0000-0000-0000-000000000000
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemplate(createTemplateRequest: CreateTemplateRequest, options?: any): AxiosPromise<CreateTemplate201Response> {
+            return localVarFp.createTemplate(createTemplateRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @summary Delete a template by ID
+         * @param {string} id The UUID of the template to delete
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteTemplateById(id: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteTemplateById(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @summary Get a template by ID
+         * @param {string} id The UUID of the template to retrieve
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getTemplateById(id: string, options?: any): AxiosPromise<CreateTemplate201Response> {
+            return localVarFp.getTemplateById(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @summary Get template IDs by ServiceProviderID
+         * @param {string} serviceproviderid The UUID of the service provider
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getTemplatesByServiceProviderId(serviceproviderid: string, options?: any): AxiosPromise<Array<string>> {
+            return localVarFp.getTemplatesByServiceProviderId(serviceproviderid, options).then((request) => request(axios, basePath));
+        },
+        /**
+         *
+         * @summary Update an existing template by ID
+         * @param {string} id The UUID of the template to update
+         * @param {CreateTemplate201Response} createTemplate201Response Template object that needs to be updated
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateTemplateById(id: string, createTemplate201Response: CreateTemplate201Response, options?: any): AxiosPromise<void> {
+            return localVarFp.updateTemplateById(id, createTemplate201Response, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * TemplatesApi - object-oriented interface
+ * @export
+ * @class TemplatesApi
+ * @extends {BaseAPI}
+ */
+export class TemplatesApi extends BaseAPI {
+    /**
+     *
+     * @summary Create a new template
+     * @param {CreateTemplateRequest} createTemplateRequest Template object to be created; make sure that the ID is 00000000-0000-0000-0000-000000000000
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TemplatesApi
+     */
+    public createTemplate(createTemplateRequest: CreateTemplateRequest, options?: RawAxiosRequestConfig) {
+        return TemplatesApiFp(this.configuration).createTemplate(createTemplateRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @summary Delete a template by ID
+     * @param {string} id The UUID of the template to delete
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TemplatesApi
+     */
+    public deleteTemplateById(id: string, options?: RawAxiosRequestConfig) {
+        return TemplatesApiFp(this.configuration).deleteTemplateById(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @summary Get a template by ID
+     * @param {string} id The UUID of the template to retrieve
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TemplatesApi
+     */
+    public getTemplateById(id: string, options?: RawAxiosRequestConfig) {
+        return TemplatesApiFp(this.configuration).getTemplateById(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @summary Get template IDs by ServiceProviderID
+     * @param {string} serviceproviderid The UUID of the service provider
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TemplatesApi
+     */
+    public getTemplatesByServiceProviderId(serviceproviderid: string, options?: RawAxiosRequestConfig) {
+        return TemplatesApiFp(this.configuration).getTemplatesByServiceProviderId(serviceproviderid, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     *
+     * @summary Update an existing template by ID
+     * @param {string} id The UUID of the template to update
+     * @param {CreateTemplate201Response} createTemplate201Response Template object that needs to be updated
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TemplatesApi
+     */
+    public updateTemplateById(id: string, createTemplate201Response: CreateTemplate201Response, options?: RawAxiosRequestConfig) {
+        return TemplatesApiFp(this.configuration).updateTemplateById(id, createTemplate201Response, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * TokenApi - axios parameter creator
  * @export
  */
@@ -6610,5 +7215,190 @@ export class ValidusersApi extends BaseAPI {
      */
     public getValidUsers(inputUserIDs: InputUserIDs, options?: RawAxiosRequestConfig) {
         return ValidusersApiFp(this.configuration).getValidUsers(inputUserIDs, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * VisitApi - axios parameter creator
+ * @export
+ */
+export const VisitApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * This call will return a label which is time limited
+         * @summary returns a label for the content token
+         * @param {string} token The token for the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        visitToken: async (token: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'token' is not null or undefined
+            assertParamExists('visitToken', 'token', token)
+            const localVarPath = `/visit/label/token/{token}`
+                .replace(`{${"token"}}`, encodeURIComponent(String(token)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * This call will accept a label which is time limited token and redirects to a view page
+         * @summary Redirects to a view for the shared content
+         * @param {string} label The label of the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        visitView: async (label: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'label' is not null or undefined
+            assertParamExists('visitView', 'label', label)
+            const localVarPath = `/visit/label/{label}`
+                .replace(`{${"label"}}`, encodeURIComponent(String(label)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication jwAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * VisitApi - functional programming interface
+ * @export
+ */
+export const VisitApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = VisitApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * This call will return a label which is time limited
+         * @summary returns a label for the content token
+         * @param {string} token The token for the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async visitToken(token: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.visitToken(token, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VisitApi.visitToken']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * This call will accept a label which is time limited token and redirects to a view page
+         * @summary Redirects to a view for the shared content
+         * @param {string} label The label of the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async visitView(label: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.visitView(label, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['VisitApi.visitView']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * VisitApi - factory interface
+ * @export
+ */
+export const VisitApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = VisitApiFp(configuration)
+    return {
+        /**
+         * This call will return a label which is time limited
+         * @summary returns a label for the content token
+         * @param {string} token The token for the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        visitToken(token: string, options?: any): AxiosPromise<string> {
+            return localVarFp.visitToken(token, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * This call will accept a label which is time limited token and redirects to a view page
+         * @summary Redirects to a view for the shared content
+         * @param {string} label The label of the shared content to be viewed
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        visitView(label: string, options?: any): AxiosPromise<void> {
+            return localVarFp.visitView(label, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * VisitApi - object-oriented interface
+ * @export
+ * @class VisitApi
+ * @extends {BaseAPI}
+ */
+export class VisitApi extends BaseAPI {
+    /**
+     * This call will return a label which is time limited
+     * @summary returns a label for the content token
+     * @param {string} token The token for the shared content to be viewed
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof VisitApi
+     */
+    public visitToken(token: string, options?: RawAxiosRequestConfig) {
+        return VisitApiFp(this.configuration).visitToken(token, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * This call will accept a label which is time limited token and redirects to a view page
+     * @summary Redirects to a view for the shared content
+     * @param {string} label The label of the shared content to be viewed
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof VisitApi
+     */
+    public visitView(label: string, options?: RawAxiosRequestConfig) {
+        return VisitApiFp(this.configuration).visitView(label, options).then((request) => request(this.axios, this.basePath));
     }
 }

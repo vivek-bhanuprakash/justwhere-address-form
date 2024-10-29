@@ -314,7 +314,7 @@ const BenPage: React.FC = () => {
                   <h2 className="mb-4 text-lg font-semibold uppercase">Output</h2>
                   <div className="mb-0">
                     <label htmlFor="secondaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                      Address Key
+                      Content Key
                     </label>
                     <textarea
                       id="secondaryToken"
@@ -389,12 +389,12 @@ const BenPage: React.FC = () => {
                 ></input>
               </div>
               <div className="mb-0">
-                <label htmlFor="addressID" className="mb-1 block text-xs font-semibold uppercase">
-                  Address
+                <label htmlFor="contentID" className="mb-1 block text-xs font-semibold uppercase">
+                  Content
                 </label>
                 <input
                   type="text"
-                  id="addressID"
+                  id="contentID"
                   className="w-full rounded-md border px-3 py-2 text-sm font-normal"
                   value={contentID}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setContentID(event.target.value)}
@@ -422,7 +422,7 @@ const BenPage: React.FC = () => {
 
                 <div className="mb-0">
                   <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                    Address Key
+                    Content Key
                   </label>
                   <textarea
                     id="primaryToken"
@@ -455,7 +455,7 @@ const BenPage: React.FC = () => {
               {userType === UserType.BNEmployee ? (
                 <div className="mb-0">
                   <label htmlFor="secondaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                    Address Key
+                    Content Key
                   </label>
                   <textarea
                     id="secondaryToken"

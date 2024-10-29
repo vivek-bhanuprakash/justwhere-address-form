@@ -1,17 +1,12 @@
-import { AxiosError } from "axios";
-import { AddressApi, AddressInput, Configuration, IndividualApi, UserinfoApi } from "../internal/sdk/";
+import { AddressApi, AddressInput, IndividualApi, UserinfoApi } from "../internal/sdk/";
 import {
   Address,
   AddressID,
   BeneficiaryID,
-  GetAuthToken,
+  CreateAPIConfig,
   IndividualID,
-  JWError,
-  JWErrorAuthenticationRequired,
-  JWErrorBadRequest,
-  JWErrorForbidden,
-  JWErrorNotFound,
-  JWErrorServerError,
+  JWAPIRequest,
+  OwnerToken,
   PrimaryToken,
   SecondaryToken,
   ServiceProviderID,
@@ -19,9 +14,9 @@ import {
   UserID,
 } from "../types/types";
 
-export interface PrimaryTokenAddressRequest {
-  hostPort: string;
-  authToken?: string;
+import { JWErrorAuthenticationRequired, throwError } from "../types/errors";
+
+export interface PrimaryTokenAddressRequest extends JWAPIRequest {
   addressID: AddressID;
   serviceProviderID: ServiceProviderID;
   token: PrimaryToken;
@@ -33,15 +28,7 @@ export interface PrimaryTokenAddressResponse {
 }
 
 export const GetAddressUsingPrimaryToken = async (request: PrimaryTokenAddressRequest): Promise<PrimaryTokenAddressResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
-
+  const config = CreateAPIConfig(request);
   const api = new AddressApi(config);
 
   try {
@@ -56,9 +43,7 @@ export const GetAddressUsingPrimaryToken = async (request: PrimaryTokenAddressRe
   }
 };
 
-export interface SecondaryTokenAddressRequest {
-  hostPort: string;
-  authToken?: string;
+export interface SecondaryTokenAddressRequest extends JWAPIRequest {
   addressID: AddressID;
   beneficiaryID: BeneficiaryID;
   token: SecondaryToken;
@@ -70,15 +55,7 @@ export interface SecondaryTokenAddressResponse {
 }
 
 export const GetAddressUsingSecondaryToken = async (request: SecondaryTokenAddressRequest): Promise<SecondaryTokenAddressResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
-
+  const config = CreateAPIConfig(request);
   const api = new AddressApi(config);
 
   try {
@@ -93,9 +70,7 @@ export const GetAddressUsingSecondaryToken = async (request: SecondaryTokenAddre
   }
 };
 
-export interface OwnerTokenAddressRequest {
-  hostPort: string;
-  authToken?: string;
+export interface OwnerTokenAddressRequest extends JWAPIRequest {
   individualID: IndividualID;
   addressID: AddressID;
 }
@@ -106,19 +81,12 @@ export interface OwnerTokenAddressResponse {
 }
 
 export const GetAddressUsingOwnerToken = async (request: OwnerTokenAddressRequest): Promise<OwnerTokenAddressResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
-
+  const config = CreateAPIConfig(request);
   const api = new AddressApi(config);
 
   try {
-    const response = await api.getAddress(request.addressID, "", "", request.individualID);
+    const currentUser = await GetCurrentUserInfo({ hostPort: request.hostPort, authToken: request.authToken });
+    const response = await api.getAddress(request.addressID, currentUser.token, "", request.individualID);
     const address = response.data || null;
     return {
       request: request,
@@ -129,9 +97,7 @@ export const GetAddressUsingOwnerToken = async (request: OwnerTokenAddressReques
   }
 };
 
-export interface OwnerAddressesRequest {
-  hostPort: string;
-  authToken?: string;
+export interface OwnerAddressesRequest extends JWAPIRequest {
   individualID: IndividualID;
 }
 
@@ -141,15 +107,7 @@ export interface OwnerAddressesResponse {
 }
 
 export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise<OwnerAddressesResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
-
+  const config = CreateAPIConfig(request);
   const api = new IndividualApi(config);
 
   try {
@@ -157,7 +115,12 @@ export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise
     const addresses: Record<AddressID, Address> = {};
     await Promise.all(
       Object.keys(response.data.addresses || {}).map(async (addressID: AddressID) => {
-        const response = await GetAddressUsingOwnerToken({ hostPort: request.hostPort, individualID: request.individualID, addressID: addressID });
+        const response = await GetAddressUsingOwnerToken({
+          hostPort: request.hostPort,
+          authToken: request.authToken,
+          individualID: request.individualID,
+          addressID: addressID,
+        });
         addresses[response.address.ID] = response.address;
       }),
     );
@@ -170,27 +133,18 @@ export const GetOwnerAddresses = async (request: OwnerAddressesRequest): Promise
   }
 };
 
-export interface CurrentUserInfoRequest {
-  hostPort: string;
-  authToken?: string;
-}
+export interface CurrentUserInfoRequest extends JWAPIRequest {}
 
 export interface CurrentUserInfoResponse {
   request: CurrentUserInfoRequest;
   userID: UserID;
   individualID: IndividualID;
+  serviceProviderID: ServiceProviderID;
+  token: OwnerToken;
 }
 
 export const GetCurrentUserInfo = async (request: CurrentUserInfoRequest): Promise<CurrentUserInfoResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
-
+  const config = CreateAPIConfig(request);
   const api = new UserinfoApi(config);
 
   try {
@@ -199,15 +153,17 @@ export const GetCurrentUserInfo = async (request: CurrentUserInfoRequest): Promi
       request: request,
       userID: response.data.UserID || "",
       individualID: response.data.IndividualID || "",
+      serviceProviderID: response.data.DefaultServiceProvider || "",
+      token: response.data.Ownertoken || "",
     };
   } catch (e) {
     return throwError(e);
   }
 };
 
-export const IsLoggedIn = async (hostPort: string): Promise<boolean> => {
+export const IsLoggedIn = async (hostPort: string, authToken: string): Promise<boolean> => {
   try {
-    const u = await GetCurrentUserInfo({ hostPort });
+    const u = await GetCurrentUserInfo({ hostPort, authToken: authToken });
     return u.userID.trim().length > 0 && u.individualID.trim().length > 0;
   } catch (e) {
     if (e instanceof JWErrorAuthenticationRequired) return false;
@@ -246,30 +202,3 @@ function convertToAddress(input: AddressInput): Address {
   output.Tags = newTags;
   return output;
 }
-
-const throwError = (e: any) => {
-  if (e instanceof AxiosError) {
-    // if error is 400, then throw a JWErrorBadRequest
-    if (e.response && e.response.status === 400) {
-      throw new JWErrorBadRequest("bad request");
-    }
-    // if error is 401, then throw a JWErrorAuthenticationRequired
-    if (e.response && e.response.status === 401) {
-      throw new JWErrorAuthenticationRequired("authentication required");
-    }
-    // if error is 403, then throw a JWErrorForbidden
-    if (e.response && e.response.status === 403) {
-      throw new JWErrorForbidden("forbidden");
-    }
-    // if error is 404, then throw a JWErrorNotFound
-    if (e.response && e.response.status === 404) {
-      throw new JWErrorNotFound("not found");
-    }
-    // if error is 5xx, then throw a JWErrorServerError
-    if (e.response && e.response.status >= 500) {
-      throw new JWErrorServerError("server error");
-    }
-  }
-
-  throw new JWError((e as Error).message);
-};
