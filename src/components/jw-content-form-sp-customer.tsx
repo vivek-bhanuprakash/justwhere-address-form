@@ -35,7 +35,7 @@ import {
   ServiceProvider,
   ServiceProviderID,
   ServiceProviderSharesRequest,
-  ServiceProviderTemplatesRequest
+  ServiceProviderTemplatesRequest,
 } from "../util";
 import { GetBeneficiaryInfo, GetServiceProviderInfo, ServiceProviderInfoRequest } from "../util/providers/providers";
 import AddressForm from "./internal/address";
@@ -49,7 +49,7 @@ import {
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
   OnErrorFcn,
-  UserInfo
+  UserInfo,
 } from "./types";
 
 export interface ContentFormProps {
@@ -98,7 +98,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   const [showUnshareSecondaryToken, setShowUnshareSecondaryToken] = useState<boolean>(false);
 
   const [sharedWithServiceProvider, setSharedWithServiceProvider] = useState<boolean>(false);
-  const [serviceProvider, setServiceProvider] = useState<ServiceProvider>();
+  const [serviceProvider, setServiceProvider] = useState<ServiceProvider>({} as ServiceProvider);
   const [reprocessOne, setReprocessOne] = useState<boolean>(false);
 
   const [sharedWithBeneficiary, setSharedWithBeneficiary] = useState<boolean>(false);
@@ -140,6 +140,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   const onContentSharedWithServiceProviderInternal = async () => {
     try {
+      console.debug("JustWhere: onContentSharedWithServiceProviderInternal:", selectedSecureContent);
       const request: PrimaryTokenRequest = {
         hostPort: hostPort,
         authToken,
@@ -154,7 +155,13 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
       if (onContentSharedWithServiceProvider !== undefined || typeof onContentSharedWithServiceProvider === "function") {
         try {
-          onContentSharedWithServiceProvider("ADDRESS", request.individualID, selectedSecureContent.ID, request.serviceProviderID, response.token);
+          onContentSharedWithServiceProvider(
+            selectedSecureContent.Type,
+            request.individualID,
+            selectedSecureContent.ID,
+            request.serviceProviderID,
+            response.token,
+          );
         } catch (e) {
           console.error("JustWhere: onContentSharedWithServiceProvider callback function threw an error: ", e);
           return raiseError(new JWError((e as Error).message));
@@ -763,14 +770,22 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         let selectedTemplate = templates[0];
         if (contentType) {
           selectedTemplate =
-            templates.find((template) => template.ID.toLowerCase().trim() === contentType || template.Type.toLowerCase().trim() === contentType) ||
-            ({} as SecureContentTemplate);
+            templates.find(
+              (template) =>
+                template.ID.toLowerCase().trim() === contentType?.trim().toLowerCase() ||
+                template.Type.toLowerCase().trim() === contentType?.trim().toLowerCase(),
+            ) || ({} as SecureContentTemplate);
           if (!selectedTemplate || selectedTemplate.ID.trim().length === 0) {
             console.warn("JustWhere: no matching content template found for", contentType, ". setting to first template");
             selectedTemplate = templates[0];
           }
         }
-        setSelectedContentTemplate(selectedTemplate);
+        // if selected template is not the same as the selected content template, then set the selected content template
+        if (selectedContentTemplate.ID === undefined || selectedContentTemplate.ID.trim().length === 0) {
+          setSelectedContentTemplate(selectedTemplate);
+        } else if (selectedTemplate.ID.trim() !== selectedContentTemplate.ID.trim()) {
+          setSelectedContentTemplate(selectedTemplate);
+        }
       } catch (error) {
         console.error("JustWhere: error fetching templates:", error);
         raiseError(error as JWError);
@@ -925,7 +940,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         </div>
 
         <div>
-          {Object.keys(secureContents).length > 0 ? (
+          {Object.keys(secureContents).length > 0 && (
             <>
               <Label htmlFor="mysecurecontents">Select {selectedContentTemplate.Label}</Label>
               {selectedContentTemplate.Type.toUpperCase() === "ADDRESS" ? (
@@ -952,13 +967,11 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
                 </select>
               )}
             </>
-          ) : (
-            <></>
           )}
         </div>
       </div>
 
-      {selectedSecureContent !== undefined && selectedSecureContent.Type !== undefined && selectedSecureContent.Type.length > 0 ? (
+      {selectedSecureContent?.Type?.length > 0 && (
         <>
           {selectedSecureContent.Type.toUpperCase() === "ADDRESS" ? (
             <div className="flex flex-col gap-3 p-3 pt-0">
@@ -973,11 +986,9 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
             </div>
           )}
         </>
-      ) : (
-        <></>
       )}
 
-      {serviceProviderID !== undefined && serviceProviderID.trim().length > 0 ? (
+      {serviceProvider?.ID?.trim().length > 0 && (
         <div className="bg-gray-200 flex flex-col gap-3 p-3">
           {/* <hr className="h-px mt-3 bg-gray-300 border-0" /> */}
           {sharedWithServiceProvider ? (
@@ -1001,8 +1012,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
             </>
           )}
         </div>
-      ) : (
-        <></>
       )}
 
       {beneficiaries !== undefined && Object.keys(beneficiaries).length > 0 && sharedWithServiceProvider ? (
