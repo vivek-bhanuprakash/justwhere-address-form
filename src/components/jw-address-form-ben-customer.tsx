@@ -272,7 +272,9 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
     if (Array.isArray(beneficiaryIDs) && beneficiaryIDs.length > 0) {
       const fn = async (benIDs: BeneficiaryID[]) => {
-        const responses = await Promise.all(benIDs.map((benID) => GetBeneficiaryInfo({ hostPort: hostPort, beneficiaryID: benID.trim() })));
+        const responses = await Promise.all(
+          benIDs.map((benID) => GetBeneficiaryInfo({ hostPort: hostPort, authToken: authToken, beneficiaryID: benID.trim() })),
+        );
         const beneficiaries = responses.map((response) => response.beneficiary || ({} as Beneficiary));
         console.debug("JustWhere: retrieved", beneficiaries.length, "beneficiaries");
         /* convert to record */

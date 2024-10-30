@@ -77,10 +77,6 @@ const SPPage: React.FC = () => {
       console.debug("App: waiting for JW host to be set");
       return;
     }
-    if (authToken === undefined || authToken.trim().length === 0) {
-      console.debug("App: waiting for JW auth token to be set");
-      return;
-    }
     if (error instanceof JWErrorAuthenticationRequired) {
       console.debug("App: JustWhere authentication required");
       window.open(`${jwHost}/api/login`, "_top");
@@ -89,6 +85,7 @@ const SPPage: React.FC = () => {
   };
 
   const setActiveData = (d: Data) => {
+    console.debug("App: setting active data:", d);
     setJWHost(d.HostPort);
     setIndividualID(d.IndividualID);
     setContentID(d.ContentID);
@@ -320,7 +317,7 @@ const SPPage: React.FC = () => {
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="grid gap-4">
             <div className="bg-gray-100 p-2">
-              {userType === UserType.Customer && jwHost !== undefined && jwHost.trim().length > 0 && authToken !== undefined && authToken.trim().length > 0 ? (
+              {userType === UserType.Customer && jwHost !== undefined && jwHost.trim().length > 0 ? (
                 <JWContentFormServiceProviderCustomer
                   hostPort={jwHost}
                   authToken={authToken}
@@ -339,11 +336,7 @@ const SPPage: React.FC = () => {
               ) : (
                 <></>
               )}
-              {userType === UserType.SPEmployee &&
-              jwHost !== undefined &&
-              jwHost.trim().length > 0 &&
-              authToken !== undefined &&
-              authToken.trim().length > 0 ? (
+              {userType === UserType.SPEmployee && jwHost !== undefined && jwHost.trim().length > 0 ? (
                 <JWAddressFormServiceProviderEmployee
                   hostPort={jwHost}
                   authToken={authToken}
@@ -356,11 +349,7 @@ const SPPage: React.FC = () => {
               ) : (
                 <></>
               )}
-              {userType === UserType.BNEmployee &&
-              jwHost !== undefined &&
-              jwHost.trim().length > 0 &&
-              authToken !== undefined &&
-              authToken.trim().length > 0 ? (
+              {userType === UserType.BNEmployee && jwHost !== undefined && jwHost.trim().length > 0 ? (
                 <JWAddressFormBeneficiaryEmployee
                   hostPort={jwHost}
                   authToken={authToken}

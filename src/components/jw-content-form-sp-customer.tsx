@@ -22,6 +22,7 @@ import {
   IndividualID,
   IsValidURL,
   JWError,
+  JWErrorAuthenticationRequired,
   OwnerSecureContentsRequest,
   PrimaryToken,
   PrimaryTokenRequest,
@@ -34,7 +35,7 @@ import {
   ServiceProvider,
   ServiceProviderID,
   ServiceProviderSharesRequest,
-  ServiceProviderTemplatesRequest,
+  ServiceProviderTemplatesRequest
 } from "../util";
 import { GetBeneficiaryInfo, GetServiceProviderInfo, ServiceProviderInfoRequest } from "../util/providers/providers";
 import AddressForm from "./internal/address";
@@ -48,7 +49,7 @@ import {
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
   OnErrorFcn,
-  UserInfo,
+  UserInfo
 } from "./types";
 
 export interface ContentFormProps {
@@ -84,9 +85,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 }) => {
   const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "", serviceProviderID: "", token: "" });
   const [internalIndividualID, setInternalIndividualID] = useState<IndividualID>("");
-
-  const [myAddresses, setMyAddresses] = useState<Record<AddressID, Address>>({});
-  const [address, setAddress] = useState<Address>();
 
   const [secureContents, setSecureContents] = useState<Record<SecureContentID, SecureContent>>({} as Record<SecureContentID, SecureContent>);
   const [selectedSecureContent, setSelectedSecureContent] = useState<SecureContent>({} as SecureContent);
@@ -136,10 +134,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     setSelectedSecureContent(secureContents?.[event.target.value] || ({} as SecureContent));
   };
 
-  const onSelectedMyAddressChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setAddress(myAddresses[event.target.value]);
-  };
-
   const onSelectedBeneficiaryChanged: React.ChangeEventHandler<HTMLSelectElement> = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedBeneficiary(beneficiaries[event.target.value]);
   };
@@ -150,7 +144,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         hostPort: hostPort,
         authToken,
         individualID: internalIndividualID || "",
-        addressID: address?.ID || "",
+        ...(selectedSecureContent.Type === "ADDRESS" ? { addressID: selectedSecureContent.ID || "" } : { contentID: selectedSecureContent.ID || "" }),
         serviceProviderID: serviceProviderID || "",
       };
 
@@ -160,7 +154,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
       if (onContentSharedWithServiceProvider !== undefined || typeof onContentSharedWithServiceProvider === "function") {
         try {
-          onContentSharedWithServiceProvider("ADDRESS", request.individualID, request.addressID, request.serviceProviderID, response.token);
+          onContentSharedWithServiceProvider("ADDRESS", request.individualID, selectedSecureContent.ID, request.serviceProviderID, response.token);
         } catch (e) {
           console.error("JustWhere: onContentSharedWithServiceProvider callback function threw an error: ", e);
           return raiseError(new JWError((e as Error).message));
@@ -183,7 +177,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         hostPort: hostPort,
         authToken,
         individualID: internalIndividualID || "",
-        addressID: address?.ID || "",
+        ...(selectedSecureContent.Type === "ADDRESS" ? { addressID: selectedSecureContent.ID || "" } : { contentID: selectedSecureContent.ID || "" }),
         serviceProviderID: serviceProviderID || "",
       };
 
@@ -192,7 +186,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
       if (onContentUnsharedWithServiceProvider !== undefined && typeof onContentUnsharedWithServiceProvider === "function") {
         try {
-          onContentUnsharedWithServiceProvider(selectedSecureContent.Type, request.individualID, request.addressID, request.serviceProviderID);
+          onContentUnsharedWithServiceProvider(selectedSecureContent.Type, request.individualID, selectedSecureContent.ID, request.serviceProviderID);
         } catch (e) {
           console.error("JustWhere: onContentUnsharedWithServiceProvider callback function threw an error: ", e);
           return raiseError(new JWError((e as Error).message));
@@ -308,6 +302,12 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       return;
     }
 
+    if (authToken === undefined || authToken.trim().length === 0) {
+      console.error("JustWhere: no authToken provided or authToken is not a string");
+      raiseError(new JWErrorAuthenticationRequired("no authToken or authToken is not a string or is empty"));
+      return;
+    }
+
     const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
     GetCurrentUserInfo(req)
       .then((response) => {
@@ -328,41 +328,73 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   /* retrieve service provider details */
   useEffect(() => {
-    setServiceProvider({} as ServiceProvider);
+    const resetServiceProviderState = () => {
+      setServiceProvider({} as ServiceProvider);
+    };
 
-    if (currentUserInfo.individualID.trim().length === 0) return;
-
-    if (serviceProviderID !== undefined && typeof serviceProviderID === "string" && serviceProviderID.trim().length !== 0) {
-      const req: ServiceProviderInfoRequest = { hostPort: hostPort, serviceProviderID: serviceProviderID };
-      GetServiceProviderInfo(req)
-        .then((response) => {
-          setServiceProvider(response.serviceProvider);
-        })
-        .catch((error) => {
-          raiseError(error as JWError);
-        });
+    // Early return if no user ID
+    if (!currentUserInfo.individualID?.trim()) {
+      resetServiceProviderState();
+      return;
     }
-  }, [currentUserInfo, serviceProviderID]);
+
+    // Early return if no valid service provider ID
+    if (!serviceProviderID?.trim()) {
+      resetServiceProviderState();
+      console.error("JustWhere: no valid service provider ID provided or service provider ID is not a string");
+      return raiseError(new JWError("no valid service provider ID provided or service provider ID is not a string"));
+    }
+
+    const fetchServiceProviderInfo = async () => {
+      try {
+        const req: ServiceProviderInfoRequest = {
+          hostPort,
+          authToken,
+          serviceProviderID,
+        };
+
+        const response = await GetServiceProviderInfo(req);
+        setServiceProvider(response.serviceProvider);
+      } catch (error) {
+        console.error("JustWhere: error fetching service provider details:", error);
+        return raiseError(error as JWError);
+      }
+    };
+
+    fetchServiceProviderInfo();
+  }, [currentUserInfo.individualID, serviceProviderID]);
 
   /* retrieve preferred beneficiaries details */
   useEffect(() => {
-    setBeneficiaries({} as Record<BeneficiaryID, Beneficiary>);
-    setSelectedBeneficiary({} as Beneficiary);
+    const resetBeneficiaryState = () => {
+      setBeneficiaries({});
+      setSelectedBeneficiary({} as Beneficiary);
+    };
 
-    if (currentUserInfo.individualID.trim().length === 0) return;
+    if (currentUserInfo.individualID.trim().length === 0) {
+      resetBeneficiaryState();
+      return;
+    }
 
-    if (Array.isArray(beneficiaryIDs) && beneficiaryIDs.length > 0) {
-      const fn = async (benIDs: BeneficiaryID[]) => {
-        const responses = await Promise.all(benIDs.map((benID) => GetBeneficiaryInfo({ hostPort: hostPort, beneficiaryID: benID.trim() })));
-        const beneficiaries = responses.map((response) => response.beneficiary || ({} as Beneficiary));
-        console.debug("JustWhere: retrieved", beneficiaries.length, "beneficiaries");
-        /* convert to record */
-        const beneficiariesInfo = beneficiaries.reduce(
-          (acc, cur) => {
-            acc[cur.ID] = cur;
-            return acc;
-          },
-          {} as Record<BeneficiaryID, Beneficiary>,
+    if (!beneficiaryIDs || !Array.isArray(beneficiaryIDs) || beneficiaryIDs.some((item) => typeof item !== "string") || beneficiaryIDs.length === 0) {
+      resetBeneficiaryState();
+      return;
+    }
+
+    const fetchBeneficiaries = async (benIDs: BeneficiaryID[]) => {
+      try {
+        const responses = await Promise.all(benIDs.map((benID) => GetBeneficiaryInfo({ hostPort, authToken, beneficiaryID: benID.trim() })));
+
+        const beneficiaries = responses.map((response) => response.beneficiary).filter(Boolean) as Beneficiary[];
+
+        console.debug(`JustWhere: retrieved ${beneficiaries.length} beneficiaries`);
+
+        const beneficiariesInfo = beneficiaries.reduce<Record<BeneficiaryID, Beneficiary>>(
+          (acc, cur) => ({
+            ...acc,
+            [cur.ID]: cur,
+          }),
+          {},
         );
 
         setBeneficiaries(beneficiariesInfo);
@@ -370,10 +402,15 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         if (beneficiaries.length > 0) {
           setSelectedBeneficiary(beneficiaries[0]);
         }
-      };
-      fn([...beneficiaryIDs]);
-    }
-  }, [currentUserInfo, beneficiaryIDs]);
+      } catch (error) {
+        console.error("JustWhere: error fetching beneficiaries:", error);
+        resetBeneficiaryState();
+        return raiseError(error as JWError);
+      }
+    };
+
+    fetchBeneficiaries([...beneficiaryIDs]);
+  }, [currentUserInfo.individualID, beneficiaryIDs]);
 
   // /* retrieve addresses and select default address, or provided address */
   // useEffect(() => {
@@ -462,26 +499,26 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   //   }
   // }, [currentUserInfo, addressID]);
 
-  /* check if address is already shared with beneficiary */
+  /* check if secure content is already shared with beneficiary */
   useEffect(() => {
-    if (selectedSecureContent === undefined || selectedSecureContent.ID === undefined || selectedSecureContent.ID.trim().length === 0) {
+    const resetBeneficiaryShareState = () => {
       setShowGenSecondaryToken(false);
       setShowUnshareSecondaryToken(false);
       setSharedWithBeneficiary(false);
+    };
+
+    if (selectedSecureContent === undefined || selectedSecureContent.ID === undefined || selectedSecureContent.ID.trim().length === 0) {
+      resetBeneficiaryShareState();
       return;
     }
 
     if (serviceProvider === undefined || serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) {
-      setShowGenSecondaryToken(false);
-      setShowUnshareSecondaryToken(false);
-      setSharedWithBeneficiary(false);
+      resetBeneficiaryShareState();
       return;
     }
 
     if (selectedBeneficiary === undefined || selectedBeneficiary.ID === undefined || selectedBeneficiary.ID.trim().length === 0) {
-      setShowGenSecondaryToken(false);
-      setShowUnshareSecondaryToken(false);
-      setSharedWithBeneficiary(false);
+      resetBeneficiaryShareState();
       return;
     }
 
@@ -600,21 +637,57 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       });
   }, [selectedSecureContent, serviceProviderID, primaryToken, reprocessOne]);
 
+  /* check if the contentID and contentType are present and set the selected secure content */
+  /* when the secure contents are retrieved */
+  useEffect(() => {
+    if (!secureContents || Object.keys(secureContents).length === 0) {
+      setSelectedSecureContent({} as SecureContent);
+      return;
+    }
+
+    // If contentID is provided, try to find matching content
+    if (contentID?.trim()) {
+      const foundContent = secureContents[contentID];
+
+      if (foundContent) {
+        // If content type is also provided, verify it matches
+        if (contentType?.trim()) {
+          if (foundContent.Type.toLowerCase() === contentType.toLowerCase()) {
+            setSelectedSecureContent(foundContent);
+          } else {
+            console.warn(`JustWhere: content found for ID ${contentID} but type ${foundContent.Type} doesn't match requested type ${contentType}`);
+            setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+          }
+        } else {
+          // No content type specified, just use the found content
+          setSelectedSecureContent(foundContent);
+        }
+      } else {
+        // Content ID not found, fall back to first content
+        console.warn(`JustWhere: no content found matching ID ${contentID}`);
+        setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+      }
+    } else {
+      // No content ID provided, use first content
+      setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+    }
+  }, [secureContents, contentID, contentType]);
+
   /* retrieve the contents matching the selected content type and set a default one if one is provided provided */
   useEffect(() => {
-    if (currentUserInfo.individualID.trim().length === 0) {
+    const resetSecureContentState = () => {
       setSecureContents({} as Record<SecureContentID, SecureContent>);
-      setSelectedSecureContent({} as SecureContent);
+    };
+
+    if (currentUserInfo.individualID.trim().length === 0) {
+      resetSecureContentState();
       return;
     }
 
     if (selectedContentTemplate === undefined || selectedContentTemplate.Type === undefined || selectedContentTemplate.Type.trim().length === 0) {
-      setSecureContents({} as Record<SecureContentID, SecureContent>);
-      setSelectedSecureContent({} as SecureContent);
+      resetSecureContentState();
       return;
     }
-
-    const contentIDProvided = contentID !== undefined && typeof contentID === "string" && contentID.trim().length !== 0;
 
     const getOwnerSecureContents = async () => {
       try {
@@ -636,37 +709,14 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
           {} as Record<SecureContentID, SecureContent>,
         );
         setSecureContents(contentMap);
-
-        // if contentID is provided, select it
-        if (contentIDProvided) {
-          // if current selected content is not the same as the one provided, then look it up in the contentMap
-          if (contentID !== selectedSecureContent.ID && contentID !== selectedSecureContent.Type) {
-            const foundContent = contentMap[contentID];
-            if (foundContent === undefined) {
-              setSelectedSecureContent(Object.keys(contentMap).length > 0 ? contentMap[Object.keys(contentMap)[0]] : ({} as SecureContent));
-              console.warn("JustWhere: no secured content found matching the provided contentID:", contentID);
-              return;
-            }
-
-            if (contentType !== foundContent.Type) {
-              setSelectedSecureContent(Object.keys(contentMap).length > 0 ? contentMap[Object.keys(contentMap)[0]] : ({} as SecureContent));
-              console.warn("JustWhere: secured content with provided contentID does not have content type", contentType);
-              return;
-            }
-
-            setSelectedSecureContent(foundContent);
-          }
-        } else {
-          setSelectedSecureContent(Object.keys(contentMap).length > 0 ? contentMap[Object.keys(contentMap)[0]] : ({} as SecureContent));
-        }
       } catch (error) {
         console.error("JustWhere: error fetching secured contents:", error);
-        raiseError(error as JWError);
+        return raiseError(error as JWError);
       }
     };
 
     getOwnerSecureContents();
-  }, [selectedContentTemplate, contentID]);
+  }, [selectedContentTemplate]);
 
   /* retrieve the templates matching the content filter and set a default one if contentType is not provided */
   useEffect(() => {

@@ -1,10 +1,8 @@
-import { BeneficiaryApi, BeneficiaryLimited, Configuration, GenericServiceProvider, ServiceproviderApi } from "../internal/sdk/";
+import { BeneficiaryApi, BeneficiaryLimited, GenericServiceProvider, ServiceproviderApi } from "../internal/sdk/";
 import { throwError } from "../types/errors";
-import { Beneficiary, BeneficiaryID, GetAuthToken, ServiceProvider } from "../types/types";
+import { Beneficiary, BeneficiaryID, CreateAPIConfig, JWAPIRequest, ServiceProvider } from "../types/types";
 
-export interface BeneficiaryInfoRequest {
-  hostPort: string;
-  authToken?: string;
+export interface BeneficiaryInfoRequest extends JWAPIRequest {
   beneficiaryID: BeneficiaryID;
 }
 
@@ -14,14 +12,7 @@ export interface BeneficiaryInfoResponse {
 }
 
 export const GetBeneficiaryInfo = async (request: BeneficiaryInfoRequest): Promise<BeneficiaryInfoResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new BeneficiaryApi(config);
 
@@ -36,9 +27,7 @@ export const GetBeneficiaryInfo = async (request: BeneficiaryInfoRequest): Promi
   }
 };
 
-export interface ServiceProviderInfoRequest {
-  hostPort: string;
-  authToken?: string;
+export interface ServiceProviderInfoRequest extends JWAPIRequest {
   serviceProviderID: string;
 }
 
@@ -48,14 +37,7 @@ export interface ServiceProviderInfoResponse {
 }
 
 export const GetServiceProviderInfo = async (request: ServiceProviderInfoRequest): Promise<ServiceProviderInfoResponse> => {
-  const authToken = request.authToken || GetAuthToken().token;
-  const config: Configuration = new Configuration({
-    basePath: `${request.hostPort}/api`,
-    baseOptions: {
-      withCredentials: true,
-    },
-    accessToken: authToken,
-  });
+  const config = CreateAPIConfig(request);
 
   const api = new ServiceproviderApi(config);
 

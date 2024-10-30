@@ -1,12 +1,25 @@
 import { PrimaryTokenInput, SecondaryTokenInput, TokenApi } from "../internal/sdk/";
 import { throwError } from "../types/errors";
-import { AddressID, BeneficiaryID, CreateAPIConfig, IndividualID, JWAPIRequest, PrimaryToken, SecondaryToken, ServiceProviderID } from "../types/types";
+import {
+  AddressID,
+  BeneficiaryID,
+  CreateAPIConfig,
+  IndividualID,
+  JWAPIRequest,
+  PrimaryToken,
+  SecondaryToken,
+  SecureContentID,
+  ServiceProviderID,
+} from "../types/types";
 
-export interface PrimaryTokenRequest extends JWAPIRequest {
+interface PrimaryTokenRequestBase extends JWAPIRequest {
   individualID: IndividualID;
-  addressID: AddressID;
   serviceProviderID: ServiceProviderID;
 }
+
+export type PrimaryTokenRequest =
+  | (PrimaryTokenRequestBase & { addressID: AddressID; contentID?: SecureContentID })
+  | (PrimaryTokenRequestBase & { addressID?: AddressID; contentID: SecureContentID });
 
 export interface PrimaryTokenResponse {
   request: PrimaryTokenRequest;
@@ -16,8 +29,9 @@ export interface PrimaryTokenResponse {
 export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Promise<PrimaryTokenResponse> => {
   const input: PrimaryTokenInput = {
     individualID: request.individualID,
-    addressID: request.addressID,
     serviceProviderID: request.serviceProviderID,
+    ...(request.addressID && { addressID: request.addressID }),
+    ...(request.contentID && { securedcontentID: request.contentID }),
   };
 
   const config = CreateAPIConfig(request);
@@ -36,11 +50,9 @@ export const GenereratePrimaryToken = async (request: PrimaryTokenRequest): Prom
   }
 };
 
-export interface DisablePrimaryTokenRequest extends JWAPIRequest {
-  individualID: IndividualID;
-  addressID: AddressID;
-  serviceProviderID: ServiceProviderID;
-}
+export type DisablePrimaryTokenRequest =
+  | (PrimaryTokenRequestBase & { addressID: AddressID; contentID?: SecureContentID })
+  | (PrimaryTokenRequestBase & { addressID?: AddressID; contentID: SecureContentID });
 
 export interface DisablePrimaryTokenResponse {
   request: DisablePrimaryTokenRequest;
@@ -49,8 +61,9 @@ export interface DisablePrimaryTokenResponse {
 export const DisablePrimaryToken = async (request: DisablePrimaryTokenRequest): Promise<DisablePrimaryTokenResponse> => {
   const input: PrimaryTokenInput = {
     individualID: request.individualID,
-    addressID: request.addressID,
     serviceProviderID: request.serviceProviderID,
+    ...(request.addressID && { addressID: request.addressID }),
+    ...(request.contentID && { securedcontentID: request.contentID }),
   };
 
   const config = CreateAPIConfig(request);
