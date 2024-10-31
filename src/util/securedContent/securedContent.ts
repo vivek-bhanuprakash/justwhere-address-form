@@ -162,7 +162,6 @@ export const GetOwnerSecureContents = async (request: OwnerSecureContentsRequest
 
     // Filter and validate templates
     const contentFilters = validateAndNormalizeTemplates(request.templateFilters);
-    console.debug("JustWhere API: normalized content filters", contentFilters);
     const result: Record<SecureContentType, SecureContent[]> = {};
 
     // Handle address content

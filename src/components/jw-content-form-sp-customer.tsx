@@ -58,8 +58,7 @@ export interface ContentFormProps {
   contentTypeFilter: string[];
   contentID?: AddressID | SecureContentID;
   contentType?: string;
-  serviceProviderID?: ServiceProviderID;
-  primaryToken?: PrimaryToken;
+  serviceProviderID: ServiceProviderID;
   beneficiaryIDs?: BeneficiaryID[];
   onError?: OnErrorFcn;
   onContentSharedWithServiceProvider?: OnContentSharedWithServiceProvider;
@@ -75,7 +74,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   contentID,
   contentType,
   serviceProviderID,
-  primaryToken,
   beneficiaryIDs,
   onError,
   onContentSharedWithServiceProvider,
@@ -106,8 +104,8 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary>();
   const [reprocessTwo, setReprocessTwo] = useState<boolean>(false);
 
-  const internalPrimaryToken = useRef<PrimaryToken>("");
-  const internalSecondaryToken = useRef<SecondaryToken>("");
+  const intPrimaryToken = useRef<PrimaryToken>("");
+  const intSecondaryToken = useRef<SecondaryToken>("");
 
   const raiseError = (err: JWError) => {
     if (onError === undefined || typeof onError !== "function") {
@@ -151,6 +149,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
       setReprocessOne(false);
       const response: PrimaryTokenResponse = await GenereratePrimaryToken(request);
+      intPrimaryToken.current = response.token;
       setReprocessOne(true);
 
       if (onContentSharedWithServiceProvider !== undefined || typeof onContentSharedWithServiceProvider === "function") {
@@ -189,6 +188,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       };
 
       await DisablePrimaryToken(request);
+      intPrimaryToken.current = "";
       setReprocessOne(true);
 
       if (onContentUnsharedWithServiceProvider !== undefined && typeof onContentUnsharedWithServiceProvider === "function") {
@@ -209,16 +209,17 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   const onContentSharedWithBeneficiaryInternal = async () => {
     try {
-      setReprocessTwo(false);
       const request: SecondaryTokenRequest = {
         hostPort,
         authToken,
         serviceProviderID: serviceProvider?.ID || "",
         beneficiaryID: selectedBeneficiary?.ID || "",
-        token: internalPrimaryToken.current || "",
+        token: intPrimaryToken.current || "",
       };
 
+      setReprocessTwo(false);
       const response = await GenererateSecondaryToken(request);
+      intSecondaryToken.current = response.token;
       setReprocessTwo(true);
       if (onContentSharedWithBeneficiary !== undefined && typeof onContentSharedWithBeneficiary === "function") {
         try {
@@ -248,7 +249,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     if (sharedWithBeneficiary === false) return;
     if (serviceProvider === undefined || serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) return;
     if (selectedBeneficiary === undefined || selectedBeneficiary.ID === undefined || selectedBeneficiary.ID.trim().length === 0) return;
-    if (internalSecondaryToken.current.length === 0) return;
 
     setReprocessTwo(false);
     try {
@@ -257,10 +257,11 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         authToken,
         serviceProviderID: serviceProvider?.ID || "",
         beneficiaryID: selectedBeneficiary?.ID || "",
-        secondaryToken: internalSecondaryToken.current || "",
+        secondaryToken: intSecondaryToken.current || "",
       };
 
       await DisableSecondaryToken(request);
+      intSecondaryToken.current = "";
       setReprocessTwo(true);
       if (onContentUnsharedWithBeneficiary !== undefined && typeof onContentUnsharedWithBeneficiary === "function") {
         try {
@@ -282,6 +283,37 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       console.error("JustWhere: error unsharing address from beneficiary: ", e);
       return raiseError(e as JWError);
     }
+  };
+
+  const resetServiceProviderState = () => {
+    setServiceProvider({} as ServiceProvider);
+  };
+
+  const resetBeneficiariesState = () => {
+    setBeneficiaries({} as Record<BeneficiaryID, Beneficiary>);
+    setSelectedBeneficiary({} as Beneficiary);
+  };
+
+  const resetBeneficiaryShareState = () => {
+    setShowGenSecondaryToken(false);
+    setShowUnshareSecondaryToken(false);
+    setSharedWithBeneficiary(false);
+  };
+
+  const resetSecureContentsState = () => {
+    setSecureContents({} as Record<SecureContentID, SecureContent>);
+  };
+
+  const resetSelectedSecureContent = () => {
+    setSelectedSecureContent({} as SecureContent);
+  };
+
+  const resetContentTemplatesState = () => {
+    setContentTemplates([]);
+  };
+
+  const resetSelectedContentTemplate = () => {
+    setSelectedContentTemplate({} as SecureContentTemplate);
   };
 
   /* load current user info */
@@ -318,7 +350,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
     GetCurrentUserInfo(req)
       .then((response) => {
-        console.debug("JustWhere: current user info response: ", response);
         setCurrentUserInfo({
           userID: response.userID.trim(),
           individualID: response.individualID.trim(),
@@ -335,10 +366,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   /* retrieve service provider details */
   useEffect(() => {
-    const resetServiceProviderState = () => {
-      setServiceProvider({} as ServiceProvider);
-    };
-
     // Early return if no user ID
     if (!currentUserInfo.individualID?.trim()) {
       resetServiceProviderState();
@@ -373,18 +400,13 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   /* retrieve preferred beneficiaries details */
   useEffect(() => {
-    const resetBeneficiaryState = () => {
-      setBeneficiaries({});
-      setSelectedBeneficiary({} as Beneficiary);
-    };
-
     if (currentUserInfo.individualID.trim().length === 0) {
-      resetBeneficiaryState();
+      resetBeneficiariesState();
       return;
     }
 
     if (!beneficiaryIDs || !Array.isArray(beneficiaryIDs) || beneficiaryIDs.some((item) => typeof item !== "string") || beneficiaryIDs.length === 0) {
-      resetBeneficiaryState();
+      resetBeneficiariesState();
       return;
     }
 
@@ -411,7 +433,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         }
       } catch (error) {
         console.error("JustWhere: error fetching beneficiaries:", error);
-        resetBeneficiaryState();
+        resetBeneficiariesState();
         return raiseError(error as JWError);
       }
     };
@@ -419,101 +441,11 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     fetchBeneficiaries([...beneficiaryIDs]);
   }, [currentUserInfo.individualID, beneficiaryIDs]);
 
-  // /* retrieve addresses and select default address, or provided address */
-  // useEffect(() => {
-  //   // if user is not logged in, nothing to do
-  //   if (currentUserInfo.individualID.trim().length === 0) return;
-
-  //   const addressProvided = addressID !== undefined && typeof addressID === "string" && addressID.trim().length !== 0;
-  //   const providedAddressID = addressProvided ? addressID : "";
-
-  //   const selectedAddressID = address === undefined ? "" : address.ID === undefined ? "" : address.ID;
-  //   const addressSelected = selectedAddressID.trim().length !== 0;
-
-  //   if (!addressProvided && !addressSelected) {
-  //     // fetch addresses and select first address
-  //     const request: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
-  //     GetOwnerAddresses(request)
-  //       .then((response) => {
-  //         setMyAddresses(response.addresses);
-  //         setAddress(response.addresses[response.addresses[0]?.ID] || ({} as Address));
-  //       })
-  //       .catch((error) => {
-  //         raiseError(error as JWError);
-  //       });
-  //   }
-
-  //   if (!addressProvided && addressSelected) {
-  //     const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
-  //     GetOwnerAddresses(req)
-  //       .then((response) => {
-  //         setMyAddresses(response.addresses);
-
-  //         if (response.addresses[selectedAddressID] === undefined) {
-  //           setAddress(response.addresses[response.addresses[0]?.ID] || ({} as Address));
-  //           console.debug("JustWhere: previously selected address not found in retrieved addresses. assuming it was deleted. setting to first address");
-  //         }
-  //       })
-  //       .catch((error) => {
-  //         raiseError(error as JWError);
-  //       });
-  //   }
-
-  //   if (addressProvided && !addressSelected) {
-  //     // check if addressID belongs to current logged in user
-  //     // if yes, then set internalAddressID to addressID
-  //     // if no, then set internalAddressID to first address in myAddresses
-  //     const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
-  //     GetOwnerAddresses(req)
-  //       .then((response) => {
-  //         setMyAddresses(response.addresses);
-
-  //         if (response.addresses[providedAddressID] !== undefined) {
-  //           setAddress(response.addresses[providedAddressID]);
-  //         } else {
-  //           setAddress(response.addresses[response.addresses[0]?.ID] || ({} as Address));
-  //         }
-  //       })
-  //       .catch((error) => {
-  //         raiseError(error as JWError);
-  //       });
-  //   }
-
-  //   if (addressProvided && addressSelected) {
-  //     if (providedAddressID !== selectedAddressID) {
-  //       const req: OwnerAddressesRequest = { hostPort: hostPort, individualID: currentUserInfo.individualID };
-  //       GetOwnerAddresses(req)
-  //         .then((response) => {
-  //           setMyAddresses(response.addresses);
-
-  //           if (response.addresses[providedAddressID] !== undefined) {
-  //             setAddress(response.addresses[addressID || ""]);
-  //           } else {
-  //             // provided address does not belong to current user (anymore?)
-  //             // check if the currently selected address is also part of the retrieved addresses
-  //             // because it may have been deleted from the backend in the meantime
-
-  //             if (response.addresses[selectedAddressID] === undefined) {
-  //               setAddress(response.addresses[response.addresses[0]?.ID] || ({} as Address));
-  //               console.debug("JustWhere: previously selected address not found in retrieved addresses. assuming it was deleted. setting to first address");
-  //             }
-  //           }
-  //         })
-  //         .catch((error) => {
-  //           raiseError(error as JWError);
-  //         });
-  //     }
-  //   }
-  // }, [currentUserInfo, addressID]);
+  /* select a beneficiary if necessary */
+  useEffect(() => {}, [beneficiaries]);
 
   /* check if secure content is already shared with beneficiary */
   useEffect(() => {
-    const resetBeneficiaryShareState = () => {
-      setShowGenSecondaryToken(false);
-      setShowUnshareSecondaryToken(false);
-      setSharedWithBeneficiary(false);
-    };
-
     if (selectedSecureContent === undefined || selectedSecureContent.ID === undefined || selectedSecureContent.ID.trim().length === 0) {
       resetBeneficiaryShareState();
       return;
@@ -537,7 +469,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       beneficiaryID: selectedBeneficiary.ID,
     };
     GetSharesWithBeneficiary(request).then((response) => {
-      console.debug("JustWhere: selected secure content is shared", response.shares.length, "time(s) with this beneficiary overall");
+      console.debug("JustWhere: selected secure content is shared", response.shares.length, "time(s) with this beneficiary");
       // only keep shares that match the current service provider and beneficiary for this address
       response.shares = response.shares.filter((share) => {
         const shareSP = share.serviceProviderID?.trim() || "";
@@ -552,13 +484,13 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
         setShowUnshareSecondaryToken(false);
         setSharedWithBeneficiary(false);
 
-        internalSecondaryToken.current = "";
+        intSecondaryToken.current = "";
       } else {
         setShowGenSecondaryToken(false);
         setShowUnshareSecondaryToken(true);
         setSharedWithBeneficiary(true);
 
-        internalSecondaryToken.current = response.shares[0].token || "";
+        intSecondaryToken.current = response.shares[0].token || "";
       }
     });
   }, [selectedSecureContent, serviceProvider, selectedBeneficiary, reprocessTwo]);
@@ -572,14 +504,12 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       return;
     }
 
-    if (serviceProviderID === undefined || serviceProviderID.trim().length === 0) {
+    if (serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) {
       setShowGenPrimaryToken(false);
       setShowUnsharePrimaryToken(false);
       setSharedWithServiceProvider(false);
       return;
     }
-
-    const primaryTokenProvided = primaryToken !== undefined && typeof primaryToken === "string" && primaryToken.trim().length !== 0;
 
     // is this secure content already shared with the service provider?
     const request: ServiceProviderSharesRequest = {
@@ -587,112 +517,110 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
       authToken: authToken,
       contentID: selectedSecureContent.ID,
       contentTemplate: selectedContentTemplate,
-      serviceProviderID: serviceProviderID,
+      serviceProviderID: serviceProvider.ID,
     };
     GetSharesWithServiceProvider(request)
       .then((response) => {
+        console.debug("JustWhere: selected secure content is shared", response.shares.length, "time(s) with this service provider");
         if (response.shares.length === 0) {
-          console.debug("JustWhere: secure content is not shared with service provider");
           setShowGenPrimaryToken(true);
           setShowUnsharePrimaryToken(false);
           setSharedWithServiceProvider(false);
-
-          internalPrimaryToken.current = "";
-
-          if (primaryTokenProvided) {
-            console.debug("JustWhere: provided primary token will ignored because secure content is not shared with service provider");
-          }
+          intPrimaryToken.current = "";
         } else {
           setShowGenPrimaryToken(false);
           setShowUnsharePrimaryToken(true);
           setSharedWithServiceProvider(true);
-
-          // address is shared multiple times with service provider
-          console.debug("JustWhere: selected secure content is shared", response.shares.length, "time(s) with this service provider");
-          // locate the primaryToken in the shares
-          const found = response.shares.find((share) => share.token === primaryToken);
-
-          if (primaryTokenProvided) {
-            if (found !== undefined) {
-              // primaryToken is provided and found in prior shares
-              console.debug("JustWhere: provided primary token found in prior share and will be used to generate secondary token");
-            } else {
-              // primaryToken is provided but not found in shares
-              console.warn(
-                "JustWhere: provided primary token not found in prior shares of this secure content with this service provider but will be used to generate secondary token",
-              );
-            }
-            internalPrimaryToken.current = primaryToken || "";
-          } else {
-            if (response.shares.length > 1) {
-              console.warn(
-                "JustWhere: no primary token provided. multiple shares found for this secure content with this service provider. using the first share's token to generate secondary token",
-              );
-            } else {
-              console.debug(
-                "JustWhere: no primary token provided. only one share found for this secure content with this service provider. using the first share's token to generate secondary token",
-              );
-            }
-            // use the first share's token
-            internalPrimaryToken.current = response.shares[0].token || "";
-          }
+          intPrimaryToken.current = response.shares[0].token || "";
         }
       })
       .catch((error) => {
         console.error("JustWhere: error fetching shares for Service Provider: ", error);
         raiseError(error as JWError);
       });
-  }, [selectedSecureContent, serviceProviderID, primaryToken, reprocessOne]);
+  }, [selectedSecureContent, serviceProvider, reprocessOne]);
 
-  /* check if the contentID and contentType are present and set the selected secure content */
-  /* when the secure contents are retrieved */
+  /* select a secure content if necessary while considering any provided content id*/
   useEffect(() => {
     if (!secureContents || Object.keys(secureContents).length === 0) {
-      setSelectedSecureContent({} as SecureContent);
+      resetSelectedSecureContent();
       return;
     }
 
-    // If contentID is provided, try to find matching content
-    if (contentID?.trim()) {
+    let currentSelection = selectedSecureContent;
+
+    // is there an existing selected secure content?
+    if (currentSelection.ID !== undefined && currentSelection.ID.trim().length !== 0) {
+      // a secure content is already selected
+
+      // check if the selected secure content exists in the secure contents list because the content list may have been updated
+      {
+        const foundContent = secureContents[currentSelection.ID];
+        if (!foundContent) {
+          console.warn(
+            "JustWhere: the selected secure content with ID",
+            currentSelection.ID,
+            "was not found in the list of secure contents. resetting to first content",
+          );
+          currentSelection = secureContents[Object.keys(secureContents)[0]];
+          setSelectedSecureContent(currentSelection);
+        } else {
+          currentSelection = foundContent; // should be same as the selected content
+        }
+      }
+
+      if (contentID === undefined || contentID.trim().length === 0) {
+        // no content ID provided, so keep the current selection
+        return;
+      }
+
+      // if provided content ID is the same as the selected content, then do nothing
+      if (currentSelection.ID.toLowerCase() === contentID.toLowerCase()) {
+        return;
+      }
+
+      // provided content type is different from the selected content template
+      // if it exists in the list, then select it
       const foundContent = secureContents[contentID];
 
-      if (foundContent) {
-        // If content type is also provided, verify it matches
-        if (contentType?.trim()) {
-          if (foundContent.Type.toLowerCase() === contentType.toLowerCase()) {
-            setSelectedSecureContent(foundContent);
-          } else {
-            console.warn(`JustWhere: content found for ID ${contentID} but type ${foundContent.Type} doesn't match requested type ${contentType}`);
-            setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
-          }
-        } else {
-          // No content type specified, just use the found content
-          setSelectedSecureContent(foundContent);
-        }
-      } else {
-        // Content ID not found, fall back to first content
-        console.warn(`JustWhere: no content found matching ID ${contentID}`);
-        setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+      if (foundContent === undefined) {
+        console.warn("JustWhere: no content found with ID", contentID, "in the current list of secure contents. keeping the current selection");
+        return;
       }
+
+      setSelectedSecureContent(foundContent);
     } else {
-      // No content ID provided, use first content
-      setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+      // no previous selected content
+
+      // if no content ID is provided, then select the first content from the list
+      if (contentID === undefined || contentID.trim().length === 0) {
+        setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+        return;
+      }
+
+      // if provided content ID does not exist in the list, then select the first content from the list
+      const foundContent = secureContents[contentID];
+
+      if (foundContent === undefined) {
+        console.warn("JustWhere: no content found with ID", contentID, "in the current list of secure contents. setting to first content");
+        setSelectedSecureContent(secureContents[Object.keys(secureContents)[0]]);
+        return;
+      }
+
+      // provided content type exists in the list, select it
+      setSelectedSecureContent(foundContent);
     }
-  }, [secureContents, contentID, contentType]);
+  }, [secureContents, contentID]);
 
-  /* retrieve the contents matching the selected content type and set a default one if one is provided provided */
+  /* retrieve the contents matching the selected content type */
   useEffect(() => {
-    const resetSecureContentState = () => {
-      setSecureContents({} as Record<SecureContentID, SecureContent>);
-    };
-
     if (currentUserInfo.individualID.trim().length === 0) {
-      resetSecureContentState();
+      resetSecureContentsState();
       return;
     }
 
-    if (selectedContentTemplate === undefined || selectedContentTemplate.Type === undefined || selectedContentTemplate.Type.trim().length === 0) {
-      resetSecureContentState();
+    if (!selectedContentTemplate.Type || !selectedContentTemplate.Type.trim().length) {
+      resetSecureContentsState();
       return;
     }
 
@@ -705,7 +633,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
           templateFilters: [selectedContentTemplate],
         };
         const response = await GetOwnerSecureContents(request);
-        console.debug("JustWhere: retrieved", Object.keys(response.contents).length, "secured contents matching template filter", selectedContentTemplate.Type);
+        console.debug("JustWhere: retrieved", Object.keys(response.contents).length, "secured contents matching template", selectedContentTemplate.Type);
         const contentMap = Object.entries(response.contents).reduce(
           (acc, [_, contents]) => {
             contents.forEach((content) => {
@@ -715,6 +643,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
           },
           {} as Record<SecureContentID, SecureContent>,
         );
+        setSelectedSecureContent({} as SecureContent);
         setSecureContents(contentMap);
       } catch (error) {
         console.error("JustWhere: error fetching secured contents:", error);
@@ -723,32 +652,104 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     };
 
     getOwnerSecureContents();
-  }, [selectedContentTemplate]);
+  }, [currentUserInfo.individualID, selectedContentTemplate]);
 
-  /* retrieve the templates matching the content filter and set a default one if contentType is not provided */
+  /* select a content type if necessary while considering any provided content template */
+  useEffect(() => {
+    if (contentTemplates === undefined || contentTemplates.length === 0) {
+      resetSelectedContentTemplate();
+      return;
+    }
+
+    let currentTemplate = selectedContentTemplate;
+
+    // is there an existing selected content template?
+    if (currentTemplate.ID !== undefined && currentTemplate.ID.trim().length !== 0) {
+      // a template is already selected
+
+      // check if the selected template exists in the content template list because the content template list may have been updated
+      {
+        const foundTemplate = contentTemplates.find(
+          (template) => template.ID.toLowerCase() === currentTemplate.ID.toLowerCase() || template.Type.toLowerCase() === currentTemplate.Type.toLowerCase(),
+        );
+        if (!foundTemplate) {
+          console.warn(
+            `JustWhere: the selected content template (${currentTemplate.ID}, ${currentTemplate.Type}) was not found in the list of content templates. resetting to first template`,
+          );
+          currentTemplate = contentTemplates[0];
+          setSelectedContentTemplate(currentTemplate);
+        } else {
+          currentTemplate = foundTemplate; // should be same as the selected template
+        }
+      }
+
+      if (contentType === undefined || contentType.trim().length === 0) {
+        // no content type provided, so keep the current selection
+        return;
+      }
+
+      // if provided content type is the same as the selected content template, then do nothing
+      if (currentTemplate.ID.toLowerCase() === contentType.toLowerCase()) {
+        return;
+      }
+
+      // provided content type is different from the selected content template
+      // if it exists in the list, then select it
+      const foundTemplate = contentTemplates.find(
+        (template) => template.Type.toLowerCase() === contentType.toLowerCase() || template.ID.toLowerCase() === contentType.toLowerCase(),
+      );
+
+      if (foundTemplate === undefined) {
+        console.warn(
+          `JustWhere: no content template of type ${currentTemplate.Type}) was found in the list of content templates. keeping the current selection`,
+        );
+        return;
+      }
+
+      setSelectedContentTemplate(foundTemplate);
+    } else {
+      // no previous selected content template
+
+      // if no content type is provided, then select the first template from the list
+      if (contentType === undefined || contentType.trim().length === 0) {
+        setSelectedContentTemplate(contentTemplates[0]);
+        return;
+      }
+
+      // if provided content type does not exist in the list, then select the first template from the list
+      const foundTemplate = contentTemplates.find(
+        (template) => template.Type.toLowerCase() === contentType.toLowerCase() || template.ID.toLowerCase() === contentType.toLowerCase(),
+      );
+
+      if (foundTemplate === undefined) {
+        console.warn(`JustWhere: no content template of type ${contentType} was found in the list of content templates. setting to first template`);
+        setSelectedContentTemplate(contentTemplates[0]);
+        return;
+      }
+
+      // provided content type exists in the list, select it
+      setSelectedContentTemplate(foundTemplate);
+    }
+  }, [contentType, contentTemplates]);
+
+  /* retrieve the templates matching the content filter */
   useEffect(() => {
     if (!currentUserInfo.individualID.trim()) {
-      setContentTemplates([]);
-      setSelectedContentTemplate({} as SecureContentTemplate);
+      resetContentTemplatesState();
       return;
     }
 
-    if (contentTypeFilter === undefined || contentTypeFilter.length === 0) {
-      setContentTemplates([]);
-      setSelectedContentTemplate({} as SecureContentTemplate);
+    if (!contentTypeFilter || !contentTypeFilter.length) {
+      resetContentTemplatesState();
       return;
     }
 
-    if (!Array.isArray(contentTypeFilter) || !contentTypeFilter.length || !contentTypeFilter.every((item) => typeof item === "string")) {
-      setContentTemplates([]);
-      setSelectedContentTemplate({} as SecureContentTemplate);
+    if (!Array.isArray(contentTypeFilter) || !contentTypeFilter.every((item) => typeof item === "string")) {
+      resetContentTemplatesState();
+      return;
     }
 
-    const normalizedTypes = new Set(contentTypeFilter.map((f) => f.toLowerCase().trim()));
-
-    if (contentType?.trim()) {
-      normalizedTypes.add(contentType.toLowerCase().trim());
-    }
+    const providedFilters = new Set(contentTypeFilter.map((f) => f.toLowerCase().trim()));
 
     const fetchTemplates = async () => {
       try {
@@ -758,33 +759,35 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
           serviceProviderID: currentUserInfo.serviceProviderID,
         };
 
-        const templates = await GetTemplatesForServiceProvider(req);
+        const allTemplates = await GetTemplatesForServiceProvider(req);
 
-        const matchedTemplates = templates.filter(
-          (template) => normalizedTypes.has(template.ID.toLowerCase().trim()) || normalizedTypes.has(template.Type.toLowerCase().trim()),
+        const matchedTemplates = allTemplates.filter(
+          (template) => providedFilters.has(template.ID.toLowerCase().trim()) || providedFilters.has(template.Type.toLowerCase().trim()),
         );
 
         setContentTemplates(matchedTemplates);
 
         console.debug("JustWhere: retrieved", matchedTemplates.length, "matching content templates");
-        let selectedTemplate = templates[0];
-        if (contentType) {
-          selectedTemplate =
-            templates.find(
-              (template) =>
-                template.ID.toLowerCase().trim() === contentType?.trim().toLowerCase() ||
-                template.Type.toLowerCase().trim() === contentType?.trim().toLowerCase(),
-            ) || ({} as SecureContentTemplate);
-          if (!selectedTemplate || selectedTemplate.ID.trim().length === 0) {
-            console.warn("JustWhere: no matching content template found for", contentType, ". setting to first template");
-            selectedTemplate = templates[0];
-          }
-        }
-        // if selected template is not the same as the selected content template, then set the selected content template
-        if (selectedContentTemplate.ID === undefined || selectedContentTemplate.ID.trim().length === 0) {
-          setSelectedContentTemplate(selectedTemplate);
-        } else if (selectedTemplate.ID.trim() !== selectedContentTemplate.ID.trim()) {
-          setSelectedContentTemplate(selectedTemplate);
+        {
+          // let selectedTemplate = allTemplates[0];
+          // if (contentType) {
+          //   selectedTemplate =
+          //     allTemplates.find(
+          //       (template) =>
+          //         template.ID.toLowerCase().trim() === contentType?.trim().toLowerCase() ||
+          //         template.Type.toLowerCase().trim() === contentType?.trim().toLowerCase(),
+          //     ) || ({} as SecureContentTemplate);
+          //   if (!selectedTemplate || selectedTemplate.ID === undefined || selectedTemplate.ID.trim().length === 0) {
+          //     console.warn("JustWhere: no matching content template found for", contentType, ". setting to first template");
+          //     selectedTemplate = allTemplates[0];
+          //   }
+          // }
+          // // if selected template is not the same as the selected content template, then set the selected content template
+          // if (selectedContentTemplate.ID === undefined || selectedContentTemplate.ID.trim().length === 0) {
+          //   setSelectedContentTemplate(selectedTemplate);
+          // } else if (selectedTemplate.ID.trim() !== selectedContentTemplate.ID.trim()) {
+          //   setSelectedContentTemplate(selectedTemplate);
+          // }
         }
       } catch (error) {
         console.error("JustWhere: error fetching templates:", error);
@@ -793,113 +796,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     };
 
     fetchTemplates();
-  }, [currentUserInfo, contentTypeFilter, contentType]);
-
-  // /* check if address is already shared with service provider */
-  // useEffect(() => {
-  //   setShowGenPrimaryToken(false);
-  //   setShowUnsharePrimaryToken(false);
-  //   setSharedWithServiceProvider(false);
-
-  //   if (address === undefined || address.ID === undefined || address.ID.trim().length === 0) return;
-  //   if (serviceProviderID === undefined || serviceProviderID.trim().length === 0) return;
-
-  //   const primaryTokenProvided = primaryToken !== undefined && typeof primaryToken === "string" && primaryToken.trim().length !== 0;
-
-  //   // is this address already shared with the service provider?
-  //   const req: ServiceProviderAddressSharesRequest = { hostPort: hostPort, addressID: address?.ID || "", serviceProviderID: serviceProviderID };
-  //   GetAddressSharesWithServiceProvider(req)
-  //     .then((response) => {
-  //       if (response.shares.length === 0) {
-  //         console.debug("JustWhere: address is not shared with service provider");
-  //         setShowGenPrimaryToken(true);
-  //         setShowUnsharePrimaryToken(false);
-  //         setSharedWithServiceProvider(false);
-
-  //         internalPrimaryToken.current = "";
-
-  //         if (primaryTokenProvided) {
-  //           console.debug("JustWhere: provided primary token will ignored because address is not shared with service provider");
-  //         }
-  //       } else {
-  //         setShowGenPrimaryToken(false);
-  //         setShowUnsharePrimaryToken(true);
-  //         setSharedWithServiceProvider(true);
-
-  //         // address is shared multiple times with service provider
-  //         console.debug("JustWhere: selected address is shared", response.shares.length, "time(s) with this service provider");
-  //         // locate the primaryToken in the shares
-  //         const found = response.shares.find((share) => share.token === primaryToken);
-
-  //         if (primaryTokenProvided) {
-  //           if (found !== undefined) {
-  //             // primaryToken is provided and found in prior shares
-  //             console.debug("JustWhere: provided primary token found in prior share and will be used to generate secondary token");
-  //           } else {
-  //             // primaryToken is provided but not found in shares
-  //             console.warn(
-  //               "JustWhere: provided primary token not found in prior shares of this address with this service provider but will be used to generate secondary token",
-  //             );
-  //           }
-  //           internalPrimaryToken.current = primaryToken || "";
-  //         } else {
-  //           if (response.shares.length > 1) {
-  //             console.warn(
-  //               "JustWhere: no primary token provided. multiple shares found for this address with this service provider. using the first share's token to generate secondary token",
-  //             );
-  //           } else {
-  //             console.debug(
-  //               "JustWhere: no primary token provided. only one share found for this address with this service provider. using the first share's token to generate secondary token",
-  //             );
-  //           }
-  //           // use the first share's token
-  //           internalPrimaryToken.current = response.shares[0].token || "";
-  //         }
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error("JustWhere: error fetching shares for Service Provider: ", error);
-  //       raiseError(error as JWError);
-  //     });
-  // }, [address, serviceProviderID, primaryToken, reprocessOne]);
-
-  // /* check if address is already shared with beneficiary */
-  // useEffect(() => {
-  //   setShowGenSecondaryToken(false);
-  //   setShowUnshareSecondaryToken(false);
-  //   setSharedWithBeneficiary(false);
-
-  //   if (address === undefined || address.ID === undefined || address.ID.trim().length === 0) return;
-  //   if (serviceProvider === undefined || serviceProvider.ID === undefined || serviceProvider.ID.trim().length === 0) return;
-  //   if (selectedBeneficiary === undefined || selectedBeneficiary.ID === undefined || selectedBeneficiary.ID.trim().length === 0) return;
-
-  //   const req: BeneficiaryAddressSharesRequest = { hostPort: hostPort, addressID: address?.ID || "", beneficiaryID: selectedBeneficiary.ID };
-  //   GetAddressSharesWithBeneficiary(req).then((response) => {
-  //     console.debug("JustWhere: selected address is shared", response.shares.length, "time(s) with this beneficiary overall");
-  //     // only keep shares that match the current service provider and beneficiary for this address
-  //     response.shares = response.shares.filter((share) => {
-  //       const shareSP = share.serviceProviderID?.trim() || "";
-  //       const providedSP = serviceProvider.ID?.trim() || "";
-  //       return shareSP === providedSP && shareSP.length > 0;
-  //     });
-
-  //     console.debug("JustWhere: selected address is shared", response.shares.length, "time(s) with this beneficiary via this service provider");
-
-  //     if (response.shares.length === 0) {
-  //       setShowGenSecondaryToken(true);
-  //       setShowUnshareSecondaryToken(false);
-  //       setSharedWithBeneficiary(false);
-
-  //       internalSecondaryToken.current = "";
-  //     } else {
-  //       setShowGenSecondaryToken(false);
-  //       setShowUnshareSecondaryToken(true);
-  //       setSharedWithBeneficiary(true);
-
-  //       internalSecondaryToken.current = response.shares[0].token || "";
-  //     }
-  //   });
-  // }, [address, serviceProvider, selectedBeneficiary, reprocessTwo]);
+  }, [currentUserInfo.individualID, contentTypeFilter]);
 
   return (
     <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">

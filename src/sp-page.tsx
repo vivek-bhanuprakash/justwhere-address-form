@@ -325,7 +325,6 @@ const SPPage: React.FC = () => {
                   contentID={contentID}
                   contentType={contentType}
                   serviceProviderID={serviceProviderID}
-                  primaryToken={primaryToken}
                   beneficiaryIDs={preferredBeneficiaries}
                   onError={onError}
                   onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}

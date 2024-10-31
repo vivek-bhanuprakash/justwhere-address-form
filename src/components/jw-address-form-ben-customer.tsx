@@ -27,7 +27,7 @@ import {
   SecondaryTokenRequest,
   ServiceProvider,
   ServiceProviderAddressSharesRequest,
-  ServiceProviderID,
+  ServiceProviderID
 } from "../util";
 
 import Input from "./internal/input";
@@ -207,6 +207,15 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
     });
   };
 
+  const resetBeneficiariesState = () => {
+    setBeneficiaries({} as Record<BeneficiaryID, Beneficiary>);
+    setSelectedBeneficiary({} as Beneficiary);
+  };
+
+  const resetServiceProviderState = () => {
+    setServiceProvider({} as ServiceProvider);
+  };
+
   /* load current user info */
   useEffect(() => {
     setShowGenPrimaryToken(false);
@@ -247,9 +256,10 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
   /* retrieve service provider details */
   useEffect(() => {
-    setServiceProvider({} as ServiceProvider);
-
-    if (currentUserInfo.individualID.trim().length === 0) return;
+    if (currentUserInfo.individualID.trim().length === 0) {
+      resetServiceProviderState();
+      return;
+    }
 
     if (serviceProviderID !== undefined && typeof serviceProviderID === "string" && serviceProviderID.trim().length !== 0) {
       const req: ServiceProviderInfoRequest = { hostPort: hostPort, authToken: authToken, serviceProviderID: serviceProviderID };
@@ -265,10 +275,11 @@ const JWAddressFormBeneficiaryCustomer: React.FC<AddressProps> = ({
 
   /* retrieve beneficiary details */
   useEffect(() => {
-    setBeneficiaries({} as Record<BeneficiaryID, Beneficiary>);
-    setSelectedBeneficiary({} as Beneficiary);
 
-    if (currentUserInfo.individualID.trim().length === 0) return;
+    if (currentUserInfo.individualID.trim().length === 0) {
+      resetBeneficiariesState();
+      return;
+    }
 
     if (Array.isArray(beneficiaryIDs) && beneficiaryIDs.length > 0) {
       const fn = async (benIDs: BeneficiaryID[]) => {
