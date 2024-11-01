@@ -643,7 +643,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
           },
           {} as Record<SecureContentID, SecureContent>,
         );
-        setSelectedSecureContent({} as SecureContent);
         setSecureContents(contentMap);
       } catch (error) {
         console.error("JustWhere: error fetching secured contents:", error);
