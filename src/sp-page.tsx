@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import JWAddressFormBeneficiaryEmployee from "./components/jw-address-form-ben-employee";
-import JWAddressFormServiceProviderEmployee from "./components/jw-address-form-sp-employee";
+import JWContentFormServiceProviderEmployee from "./components/jw-address-form-sp-employee";
 import JWContentFormServiceProviderCustomer from "./components/jw-content-form-sp-customer";
 import {
   OnContentSharedWithBeneficiary,
   OnContentSharedWithServiceProvider,
   OnContentUnsharedWithBeneficiary,
-  OnContentUnsharedWithServiceProvider,
+  OnContentUnsharedWithServiceProvider
 } from "./components/types";
 import {
   AddressID,
@@ -18,7 +18,7 @@ import {
   PrimaryToken,
   SecondaryToken,
   SecureContentID,
-  ServiceProviderID,
+  ServiceProviderID
 } from "./util";
 
 enum UserType {
@@ -336,13 +336,12 @@ const SPPage: React.FC = () => {
                 <></>
               )}
               {userType === UserType.SPEmployee && jwHost !== undefined && jwHost.trim().length > 0 ? (
-                <JWAddressFormServiceProviderEmployee
+                <JWContentFormServiceProviderEmployee
                   hostPort={jwHost}
                   authToken={authToken}
                   individualID={individualID}
-                  addressID={contentID}
                   serviceProviderID={serviceProviderID}
-                  primaryToken={primaryToken}
+                  contentTypeFilter={preferredContentTypes}
                   onError={onError}
                 />
               ) : (
@@ -454,6 +453,7 @@ const SPPage: React.FC = () => {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIndividualID(event.target.value)}
                 ></input>
               </div>
+              {/*
               <div className="mb-4">
                 <label htmlFor="contentID" className="mb-1 block text-xs font-semibold uppercase">
                   Content ID
@@ -478,6 +478,8 @@ const SPPage: React.FC = () => {
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => setContentType(event.target.value)}
                 ></input>
               </div>
+
+               */}
             </div>
 
             <div className="bg-gray-200 p-4">
@@ -539,17 +541,37 @@ const SPPage: React.FC = () => {
                 <></>
               )}
               {userType === UserType.SPEmployee ? (
+                // <div className="mb-0">
+                //   <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
+                //     Content Key
+                //   </label>
+                //   <textarea
+                //     id="primaryToken"
+                //     className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                //     rows={4}
+                //     value={primaryToken}
+                //     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}
+                //   ></textarea>
+                // </div>
                 <div className="mb-0">
-                  <label htmlFor="primaryToken" className="mb-1 block text-xs font-semibold uppercase">
-                    Content Key
-                  </label>
-                  <textarea
-                    id="primaryToken"
-                    className="w-full rounded-md border px-3 py-2 text-sm font-light"
-                    rows={4}
-                    value={primaryToken}
-                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setPrimaryToken(event.target.value)}
-                  ></textarea>
+                  <div className="mb-4">
+                    <label htmlFor="preferredContentTypes" className="mb-1 block text-xs font-semibold uppercase">
+                      Preferred Content Types
+                    </label>
+                    <textarea
+                      id="preferredContentTypes"
+                      className="w-full rounded-md border px-3 py-2 text-sm font-light"
+                      rows={4}
+                      value={preferredContentTypesString}
+                      onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        /* convert preferred beneficiaries string to array */
+                        const preferredContentTypesString = event.target.value;
+                        setPreferredContentTypesString(preferredContentTypesString);
+                        const preferredContentTypes = preferredContentTypesString.split(",").map((s) => s.trim());
+                        setPreferredContentTypes(preferredContentTypes);
+                      }}
+                    ></textarea>
+                  </div>
                 </div>
               ) : (
                 <></>

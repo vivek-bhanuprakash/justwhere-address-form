@@ -23,6 +23,8 @@ import {
   IsValidURL,
   JWError,
   JWErrorAuthenticationRequired,
+  JWErrorBadRequest,
+  JWErrorNotFound,
   OwnerSecureContentsRequest,
   PrimaryToken,
   PrimaryTokenRequest,
@@ -34,10 +36,9 @@ import {
   SecureContentTemplate,
   ServiceProvider,
   ServiceProviderID,
-  ServiceProviderSharesRequest,
-  ServiceProviderTemplatesRequest,
+  ServiceProviderSharesRequest
 } from "../util";
-import { GetBeneficiaryInfo, GetServiceProviderInfo, ServiceProviderInfoRequest } from "../util/providers/providers";
+import { GetBeneficiaryInfo, GetServiceProviderInfo } from "../util/providers/providers";
 import AddressForm from "./internal/address";
 import Label from "./internal/label";
 import SecureContentForm from "./internal/secure_content_form";
@@ -49,8 +50,10 @@ import {
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
   OnErrorFcn,
-  UserInfo,
+  UserInfo
 } from "./types";
+
+const UUID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
 
 export interface ContentFormProps {
   hostPort: string;
@@ -88,6 +91,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   const [selectedSecureContent, setSelectedSecureContent] = useState<SecureContent>({} as SecureContent);
 
   const [contentTemplates, setContentTemplates] = useState<SecureContentTemplate[]>([]);
+  const [spTemplates, setSPTemplates] = useState<SecureContentTemplate[]>([]);
   const [selectedContentTemplate, setSelectedContentTemplate] = useState<SecureContentTemplate>({} as SecureContentTemplate);
 
   const [showGenPrimaryToken, setShowGenPrimaryToken] = useState<boolean>(false);
@@ -316,88 +320,6 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
     setSelectedContentTemplate({} as SecureContentTemplate);
   };
 
-  /* load current user info */
-  useEffect(() => {
-    setShowGenPrimaryToken(false);
-    setShowGenSecondaryToken(false);
-    setShowUnsharePrimaryToken(false);
-    setShowUnshareSecondaryToken(false);
-
-    setContentTemplates([]);
-    setSelectedContentTemplate({} as SecureContentTemplate);
-
-    setSecureContents({} as Record<SecureContentID, SecureContent>);
-    setSelectedSecureContent({} as SecureContent);
-
-    if (hostPort === undefined || typeof hostPort !== "string" || hostPort.trim().length === 0) {
-      console.error("JustWhere: no hostPort provided or hostPort is not a string");
-      raiseError(new JWError("no hostPort or hostPort is not a string or is empty"));
-      return;
-    }
-
-    if (!IsValidURL(hostPort)) {
-      console.error("JustWhere: hostPort is not a valid URL");
-      raiseError(new JWError("hostPort is not a valid URL"));
-      return;
-    }
-
-    if (authToken === undefined || authToken.trim().length === 0) {
-      console.error("JustWhere: no authToken provided or authToken is not a string");
-      raiseError(new JWErrorAuthenticationRequired("no authToken or authToken is not a string or is empty"));
-      return;
-    }
-
-    const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
-    GetCurrentUserInfo(req)
-      .then((response) => {
-        setCurrentUserInfo({
-          userID: response.userID.trim(),
-          individualID: response.individualID.trim(),
-          serviceProviderID: response.serviceProviderID.trim(),
-          token: response.token.trim(),
-        });
-        setInternalIndividualID(response.individualID.trim());
-      })
-      .catch((error) => {
-        console.error("JustWhere: error fetching current user info: ", error);
-        raiseError(error as JWError);
-      });
-  }, [hostPort, authToken]);
-
-  /* retrieve service provider details */
-  useEffect(() => {
-    // Early return if no user ID
-    if (!currentUserInfo.individualID?.trim()) {
-      resetServiceProviderState();
-      return;
-    }
-
-    // Early return if no valid service provider ID
-    if (!serviceProviderID?.trim()) {
-      resetServiceProviderState();
-      console.error("JustWhere: no valid service provider ID provided or service provider ID is not a string");
-      return raiseError(new JWError("no valid service provider ID provided or service provider ID is not a string"));
-    }
-
-    const fetchServiceProviderInfo = async () => {
-      try {
-        const req: ServiceProviderInfoRequest = {
-          hostPort,
-          authToken,
-          serviceProviderID,
-        };
-
-        const response = await GetServiceProviderInfo(req);
-        setServiceProvider(response.serviceProvider);
-      } catch (error) {
-        console.error("JustWhere: error fetching service provider details:", error);
-        return raiseError(error as JWError);
-      }
-    };
-
-    fetchServiceProviderInfo();
-  }, [currentUserInfo.individualID, serviceProviderID]);
-
   /* retrieve preferred beneficiaries details */
   useEffect(() => {
     if (currentUserInfo.individualID.trim().length === 0) {
@@ -442,7 +364,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   }, [currentUserInfo.individualID, beneficiaryIDs]);
 
   /* select a beneficiary if necessary */
-  useEffect(() => {}, [beneficiaries]);
+  useEffect(() => { }, [beneficiaries]);
 
   /* check if secure content is already shared with beneficiary */
   useEffect(() => {
@@ -733,69 +655,189 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
 
   /* retrieve the templates matching the content filter */
   useEffect(() => {
-    if (!currentUserInfo.individualID.trim()) {
+
+    if (!currentUserInfo?.individualID?.trim().length) {
+      return;
+    }
+
+    if (!spTemplates || !spTemplates.length) {
       resetContentTemplatesState();
       return;
     }
 
     if (!contentTypeFilter || !contentTypeFilter.length) {
       resetContentTemplatesState();
-      return;
+      console.error("JustWhere: no content type filter provided or content type filter is not an array of strings");
+      return raiseError(new JWError("no content type filter provided or content type filter is not an array of strings"));
     }
 
     if (!Array.isArray(contentTypeFilter) || !contentTypeFilter.every((item) => typeof item === "string")) {
       resetContentTemplatesState();
+      console.error("JustWhere: no content type filter provided or content type filter is not an array of strings");
+      return raiseError(new JWError("no content type filter provided or content type filter is not an array of strings"));
+    }
+
+    // filter spTemplates by provided content type filter
+    const filteredTemplates = Array<SecureContentTemplate>();
+    for (const spTemplate of spTemplates) {
+      for (const fTemplate of contentTypeFilter) {
+        if (spTemplate.Type.toLowerCase().trim() === fTemplate.toLowerCase().trim() || spTemplate.ID.toLowerCase().trim() === fTemplate.toLowerCase().trim()) {
+          filteredTemplates.push(spTemplate);
+        }
+      }
+    }
+
+    console.debug(`JustWhere: ${filteredTemplates.length} service provider templates match content type filter`, contentTypeFilter);
+
+    setContentTemplates(filteredTemplates);
+  }, [spTemplates, contentTypeFilter]);
+
+  /* retrieve service provider details, service provider templates,
+ and default templates for current user*/
+  useEffect(() => {
+
+    // Early return if no user ID
+    if (!currentUserInfo?.individualID?.trim().length) {
+      resetServiceProviderState();
+      resetContentTemplatesState();
       return;
     }
 
-    const providedFilters = new Set(contentTypeFilter.map((f) => f.toLowerCase().trim()));
+    const spID = serviceProviderID;
 
-    const fetchTemplates = async () => {
+    if (!spID || !spID.trim().length) {
+      resetServiceProviderState();
+      resetContentTemplatesState();
+      console.error("JustWhere: no valid service provider ID provided or service provider ID is not a string");
+      return raiseError(new JWError("no valid service provider ID provided or service provider ID is not a string"));
+    }
+
+    if (!UUID_PATTERN.test(spID)) {
+      console.warn("JustWhere: service provider ID is not a valid UUID");
+      return;
+    }
+
+    /* fetch templates associated with current user and service provider
+    and also fetch the service provider details */
+    const fn = async () => {
       try {
-        const req: ServiceProviderTemplatesRequest = {
+
+        const spResponse = await GetServiceProviderInfo({
+          hostPort,
+          authToken,
+          serviceProviderID: spID,
+        });
+
+        if (spResponse.serviceProvider === undefined || spResponse.serviceProvider.ID === undefined || spResponse.serviceProvider.ID.trim().length === 0) {
+          resetServiceProviderState();
+          resetContentTemplatesState();
+          console.error("JustWhere: no service provider found matching the provided service provider ID");
+          raiseError(new JWErrorBadRequest("no service provider found matching the provided service provider ID"));
+          return;
+        }
+
+        setServiceProvider(spResponse.serviceProvider);
+
+        const defaultTemplates = await GetTemplatesForServiceProvider({
           hostPort,
           authToken,
           serviceProviderID: currentUserInfo.serviceProviderID,
-        };
+        });
 
-        const allTemplates = await GetTemplatesForServiceProvider(req);
+        console.debug("JustWhere: retrieved", defaultTemplates.length, "default templates");
 
-        const matchedTemplates = allTemplates.filter(
-          (template) => providedFilters.has(template.ID.toLowerCase().trim()) || providedFilters.has(template.Type.toLowerCase().trim()),
-        );
-
-        setContentTemplates(matchedTemplates);
-
-        console.debug("JustWhere: retrieved", matchedTemplates.length, "matching content templates");
-        {
-          // let selectedTemplate = allTemplates[0];
-          // if (contentType) {
-          //   selectedTemplate =
-          //     allTemplates.find(
-          //       (template) =>
-          //         template.ID.toLowerCase().trim() === contentType?.trim().toLowerCase() ||
-          //         template.Type.toLowerCase().trim() === contentType?.trim().toLowerCase(),
-          //     ) || ({} as SecureContentTemplate);
-          //   if (!selectedTemplate || selectedTemplate.ID === undefined || selectedTemplate.ID.trim().length === 0) {
-          //     console.warn("JustWhere: no matching content template found for", contentType, ". setting to first template");
-          //     selectedTemplate = allTemplates[0];
-          //   }
-          // }
-          // // if selected template is not the same as the selected content template, then set the selected content template
-          // if (selectedContentTemplate.ID === undefined || selectedContentTemplate.ID.trim().length === 0) {
-          //   setSelectedContentTemplate(selectedTemplate);
-          // } else if (selectedTemplate.ID.trim() !== selectedContentTemplate.ID.trim()) {
-          //   setSelectedContentTemplate(selectedTemplate);
-          // }
+        let spTemplates = new Array<SecureContentTemplate>();
+        try {
+          spTemplates = await GetTemplatesForServiceProvider({
+            hostPort
+            , authToken
+            , serviceProviderID: spID
+          });
+        } catch (e) {
+          if (!(e instanceof JWErrorNotFound)) {
+            throw e;
+          }
         }
+
+        console.debug("JustWhere: retrieved", spTemplates.length, "service provider templates");
+
+        const allTemplates = [...spTemplates];
+
+        // any sp templates having same type as a default template will take
+        // precedence over the default template
+        const seenTypes = spTemplates.reduce((acc, cur) => {
+          acc.add(cur.Type);
+          return acc;
+        }, new Set<string>());
+
+        defaultTemplates.forEach((template) => {
+          if (seenTypes.has(template.Type.trim().toLowerCase())) {
+            console.debug("JustWhere: skipping default template", template.Type.trim().toLowerCase(), "as it is already present in the service provider templates");
+            return;
+          }
+          seenTypes.add(template.Type.trim().toLowerCase());
+          allTemplates.push(template);
+        });
+
+        setSPTemplates(allTemplates);
       } catch (error) {
-        console.error("JustWhere: error fetching templates:", error);
+        resetContentTemplatesState();
+        resetServiceProviderState();
+        console.error("JustWhere: error fetching or processing templates or service provider:", error);
         raiseError(error as JWError);
       }
     };
 
-    fetchTemplates();
-  }, [currentUserInfo.individualID, contentTypeFilter]);
+    fn();
+  }, [currentUserInfo.individualID, serviceProviderID]);
+
+  /* load current user info */
+  useEffect(() => {
+    setShowGenPrimaryToken(false);
+    setShowGenSecondaryToken(false);
+    setShowUnsharePrimaryToken(false);
+    setShowUnshareSecondaryToken(false);
+
+    setContentTemplates([]);
+    setSelectedContentTemplate({} as SecureContentTemplate);
+
+    setSecureContents({} as Record<SecureContentID, SecureContent>);
+    setSelectedSecureContent({} as SecureContent);
+
+    if (hostPort === undefined || typeof hostPort !== "string" || hostPort.trim().length === 0) {
+      console.error("JustWhere: no hostPort provided or hostPort is not a string");
+      raiseError(new JWError("no hostPort or hostPort is not a string or is empty"));
+      return;
+    }
+
+    if (!IsValidURL(hostPort)) {
+      console.error("JustWhere: hostPort is not a valid URL");
+      raiseError(new JWError("hostPort is not a valid URL"));
+      return;
+    }
+
+    if (authToken === undefined || authToken.trim().length === 0) {
+      console.error("JustWhere: no authToken provided or authToken is not a string");
+      raiseError(new JWErrorAuthenticationRequired("no authToken or authToken is not a string or is empty"));
+      return;
+    }
+
+    const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
+    GetCurrentUserInfo(req)
+      .then((response) => {
+        setCurrentUserInfo({
+          userID: response.userID.trim(),
+          individualID: response.individualID.trim(),
+          serviceProviderID: response.serviceProviderID.trim(),
+          token: response.token.trim(),
+        });
+        setInternalIndividualID(response.individualID.trim());
+      })
+      .catch((error) => {
+        console.error("JustWhere: error fetching current user info: ", error);
+        raiseError(error as JWError);
+      });
+  }, [hostPort, authToken]);
 
   return (
     <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">

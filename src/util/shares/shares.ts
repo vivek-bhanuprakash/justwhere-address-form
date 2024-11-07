@@ -8,8 +8,9 @@ import {
   retryOperation,
   SecureContentID,
   SecureContentTemplate,
-  ServiceProviderID,
+  ServiceProviderID
 } from "../types/types";
+import { GetAddressSharesWithServiceProvider, GetSecureContentSharesWithServiceProvider } from "./sharesWithSP";
 
 export interface ServiceProviderAddressSharesRequest extends JWAPIRequest {
   addressID: AddressID;
@@ -21,6 +22,7 @@ export interface ServiceProviderAddressSharesResponse {
   shares: Share[];
 }
 
+/*
 export const GetAddressSharesWithServiceProvider = async (request: ServiceProviderAddressSharesRequest): Promise<ServiceProviderAddressSharesResponse> => {
   const config = CreateAPIConfig(request);
 
@@ -36,6 +38,7 @@ export const GetAddressSharesWithServiceProvider = async (request: ServiceProvid
     return throwError(e);
   }
 };
+*/
 
 export interface BeneficiaryAddressSharesRequest extends JWAPIRequest {
   addressID: AddressID;
@@ -73,6 +76,7 @@ export interface ServiceProviderSecureContentSharesResponse {
   shares: Array<Share>;
 }
 
+/*
 export const GetSecureContentSharesWithServiceProvider = async (
   request: ServiceProviderSecureContentSharesRequest,
 ): Promise<ServiceProviderSecureContentSharesResponse> => {
@@ -90,6 +94,7 @@ export const GetSecureContentSharesWithServiceProvider = async (
     return throwError(e);
   }
 };
+*/
 
 export interface BeneficiarySecureContentSharesRequest extends JWAPIRequest {
   contentID: SecureContentID;
@@ -196,4 +201,56 @@ export const GetSharesWithBeneficiary = async (request: BeneficiarySharesRequest
     request: request,
     shares: response.shares,
   };
+};
+
+export interface SharedWithServiceProviderRequest extends JWAPIRequest {
+  serviceProviderID: ServiceProviderID;
+}
+
+export interface SharedWithServiceProviderResponse {
+  request: SharedWithServiceProviderRequest;
+  shares: Share[];
+}
+
+export const GetSharedWithServiceProvider = async (request: SharedWithServiceProviderRequest): Promise<SharedWithServiceProviderResponse> => {
+  const config = CreateAPIConfig(request);
+
+  const api = new RecordsApi(config);
+
+  try {
+    const response = await retryOperation(() => api.getServiceProviderRecords(request.serviceProviderID));
+
+    return {
+      request: request,
+      shares: response.data,
+    };
+  } catch (e) {
+    return throwError(e);
+  }
+};
+
+export interface SharedWithBeneficiaryRequest extends JWAPIRequest {
+  beneficiaryID: BeneficiaryID;
+}
+
+export interface SharedWithBeneficiaryResponse {
+  request: SharedWithBeneficiaryRequest;
+  shares: Share[];
+}
+
+export const GetSharedWithBeneficiary = async (request: SharedWithBeneficiaryRequest): Promise<SharedWithBeneficiaryResponse> => {
+  const config = CreateAPIConfig(request);
+
+  const api = new RecordsApi(config);
+
+  try {
+    const response = await retryOperation(() => api.getBeneficiaryRecords(request.beneficiaryID));
+
+    return {
+      request: request,
+      shares: response.data,
+    };
+  } catch (e) {
+    return throwError(e);
+  }
 };

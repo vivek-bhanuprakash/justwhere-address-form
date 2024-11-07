@@ -20,6 +20,7 @@ export const ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[
 export const API_TIMEOUT = 30000; // 30 seconds
 export const MAX_RETRIES = 3;
 export const RETRY_DELAY = 1000; // 1 second
+export const NULL_UUID = "00000000-0000-0000-0000-000000000000";
 
 export type TagValue = undefined | null | string | number | boolean | Record<string, undefined | null | string | number | boolean | object>;
 
@@ -137,17 +138,17 @@ export interface SecureContentTemplate {
 
 export type SecureContent =
   | {
-      ID: SecureContentID;
-      Type: "ADDRESS";
-      Label: string;
-      Content: Address;
-    }
+    ID: SecureContentID;
+    Type: "ADDRESS";
+    Label: string;
+    Content: Address;
+  }
   | {
-      ID: SecureContentID;
-      Type: Exclude<SecureContentType, "ADDRESS">;
-      Label: string;
-      Content: GenericSecureContent;
-    };
+    ID: SecureContentID;
+    Type: Exclude<SecureContentType, "ADDRESS">;
+    Label: string;
+    Content: GenericSecureContent;
+  };
 
 // Utility function for retry logic
 export const retryOperation = async <T>(operation: () => Promise<T>, maxRetries: number = MAX_RETRIES, delay: number = RETRY_DELAY): Promise<T> => {

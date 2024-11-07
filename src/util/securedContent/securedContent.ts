@@ -17,7 +17,7 @@ import {
   SecureContentTemplate,
   SecureContentType,
   ServiceProviderID,
-  Tags,
+  Tags
 } from "../types/types";
 
 const CONTENT_TYPE_ADDRESS = "ADDRESS";
@@ -25,8 +25,9 @@ const DEFAULT_LABEL_FIELD = "label";
 const DEFAULT_TYPE_FIELD = "contenttype";
 
 export interface PrimaryTokenSecureContentRequest extends JWAPIRequest {
+  individualID: IndividualID;
   contentID: SecureContentID;
-  contentTemplate: SecureContentTemplate;
+  contentTemplates: SecureContentTemplate[];
   serviceProviderID: ServiceProviderID;
   token: PrimaryToken;
 }
@@ -51,8 +52,9 @@ export const GetSecureContentUsingPrimaryToken = async (request: PrimaryTokenSec
 };
 
 export interface SecondaryTokenSecureContentRequest extends JWAPIRequest {
+  individualID: IndividualID;
   contentID: SecureContentID;
-  contentTemplate: SecureContentTemplate;
+  contentTemplates: SecureContentTemplate[];
   beneficiaryID: BeneficiaryID;
   token: SecondaryToken;
 }
@@ -78,7 +80,7 @@ export const GetSecureContentUsingSecondaryToken = async (request: SecondaryToke
 
 export interface OwnerTokenSecureContentRequest extends JWAPIRequest {
   contentID: SecureContentID;
-  contentTemplate: SecureContentTemplate;
+  contentTemplates: SecureContentTemplate[];
   individualID: IndividualID;
   token: OwnerToken;
 }
@@ -108,33 +110,91 @@ type TokenContentResponse = PrimaryTokenSecureContentResponse | SecondaryTokenSe
 const GetSecureContentUsingIDAndToken = async (request: TokenContentRequest): Promise<TokenContentResponse> => {
   validateSecureContentRequest(request);
 
-  if (request.contentTemplate.Type.toUpperCase() === CONTENT_TYPE_ADDRESS) {
-    return await handleAddressContent(request);
-  }
+  // since we don't know the type of content, we have to look up the record for address as well as secure content
+  // if the content type is address, then we can just use the address content handler
+  // otherwise, we have to use the secure content handler
 
   const config = CreateAPIConfig(request);
   const api = new SharedSecuredcontentApi(config);
 
-  const response = await retryOperation(() => {
-    if ("serviceProviderID" in request) {
-      return api.getSharedSecuredcontent(request.contentID, request.token, request.serviceProviderID);
-    } else if ("beneficiaryID" in request) {
-      return api.getSharedSecuredcontent(request.contentID, request.token, request.beneficiaryID);
-    } else if ("individualID" in request) {
-      return api.getSharedSecuredcontent(request.contentID, request.token, "", request.individualID);
-    } else {
-      throw new JWValidationError("Invalid request type for token content");
+  if ("serviceProviderID" in request) {
+    try {
+      const response = await retryOperation(() => GetAddressUsingPrimaryToken({
+        hostPort: request.hostPort,
+        authToken: request.authToken,
+        addressID: request.contentID,
+        serviceProviderID: request.serviceProviderID,
+        token: request.token,
+      }));
+      return {
+        request,
+        content: formatAddressContent(response.address),
+      };
+    } catch {
+      const response = await retryOperation(() =>
+        api.getSharedSecuredcontent(request.contentID, request.token, request.serviceProviderID, request.individualID)
+      );
+      const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+      const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+      return {
+        request,
+        content: content,
+      };
+
     }
-  });
 
-  if (!response.data) {
-    throw new JWErrorBadRequest("No data received from API");
+  } else if ("beneficiaryID" in request) {
+    try {
+      const response = await retryOperation(() => GetAddressUsingSecondaryToken({
+        hostPort: request.hostPort,
+        authToken: request.authToken,
+        addressID: request.contentID,
+        beneficiaryID: request.beneficiaryID,
+        token: request.token,
+      }));
+      return {
+        request,
+        content: formatAddressContent(response.address),
+      };
+    } catch {
+      const response = await retryOperation(() =>
+        api.getSharedSecuredcontent(request.contentID, request.token, request.beneficiaryID, request.individualID)
+      );
+      const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+      const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+      return {
+        request,
+        content: content,
+      };
+    }
+
+  } else if ("individualID" in request) {
+    try {
+      const response = await retryOperation(() => GetAddressUsingOwnerToken({
+        hostPort: request.hostPort,
+        authToken: request.authToken,
+        individualID: request.individualID,
+        addressID: request.contentID,
+      }));;
+      return {
+        request,
+        content: formatAddressContent(response.address),
+      };
+    } catch {
+      const response = await retryOperation(() =>
+        api.getSharedSecuredcontent(request.contentID, request.token, "", request.individualID)
+      );
+      const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+      const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+      return {
+        request,
+        content: content,
+      };
+    }
+
+  } else {
+    throw new JWValidationError("Invalid request type for token content");
   }
-
-  return {
-    request,
-    content: formatSecureContent(response.data, request.contentTemplate),
-  } as PrimaryTokenSecureContentResponse | SecondaryTokenSecureContentResponse | OwnerTokenSecureContentResponse;
 };
 
 export interface OwnerSecureContentsRequest extends JWAPIRequest {
@@ -229,7 +289,7 @@ const validateSecureContentRequest = (
   request: PrimaryTokenSecureContentRequest | SecondaryTokenSecureContentRequest | OwnerTokenSecureContentRequest,
 ): void => {
   if (!request.contentID) throw new JWValidationError("Content ID is required");
-  if (!request.contentTemplate) throw new JWValidationError("Content template is required");
+  if (!request.contentTemplates || !request.contentTemplates.length) throw new JWValidationError("One or more content templates are required");
   if (!request.token) throw new JWValidationError("Token is required");
   if (!request.hostPort) throw new JWValidationError("Host port is required");
 };
@@ -304,6 +364,7 @@ const formatSecureContent = (content: SecuredContentLimited, template: SecureCon
     throw new JWErrorBadRequest("Content ID is missing");
   }
 
+  console.log("JustWhere API: content:", content, "template:", template);
   const labelField = template.DataConfig.LabelField || DEFAULT_LABEL_FIELD;
   const tags = content.tags as Tags;
 
@@ -424,4 +485,77 @@ const handleNonAddressContent = async (
     console.error("Error processing non-address content:", error);
     return throwError(error);
   }
+};
+
+/**
+ * Maps an array of SecuredContentLimited objects to a record of SecureContent arrays
+ * grouped by content type, using the provided templates for formatting.
+ *
+ * @param contents Array of SecuredContentLimited objects to process
+ * @param templates Array of SecureContentTemplate objects defining content structure
+ * @returns Record of SecureContent arrays grouped by type
+ * @throws JWValidationError if template validation fails
+ * @throws JWErrorBadRequest if content processing fails
+ */
+export const ConvertToSecureContents = (contents: SecuredContentLimited[], templates: SecureContentTemplate[]): Record<SecureContentType, SecureContent[]> => {
+  try {
+    // First, validate and normalize templates
+    const templateMap = validateAndNormalizeTemplates(templates);
+    const result: Record<SecureContentType, SecureContent[]> = {};
+
+    // Process each content item
+    contents.forEach(content => {
+      if (!content.tags || !content.id) {
+        console.warn(`JustWhere API: skipping invalid content: ${JSON.stringify(content)}`);
+        return;
+      }
+
+      // Find matching template for the content
+      const matchingTemplate = findMatchingTemplate(content, templateMap);
+
+      if (!matchingTemplate) {
+        console.warn(`JustWhere API: no matching template provided for content: ${content.id}`);
+        return;
+      }
+
+      const contentType = matchingTemplate.Type.toUpperCase() as SecureContentType;
+
+      // Initialize array for this content type if it doesn't exist
+      if (!result[contentType]) {
+        result[contentType] = [];
+      }
+
+      // Format and add the content to the appropriate array
+      try {
+        const formattedContent = formatSecureContent(content, matchingTemplate);
+        result[contentType].push(formattedContent);
+      } catch (error) {
+        console.warn(`Error formatting content ${content.id}:`, error);
+      }
+    });
+
+    return result;
+  } catch (error) {
+    return throwError(error);
+  }
+};
+
+/**
+ * Helper function to find the matching template for a given content
+ * based on the content type field in the tags
+ */
+const findMatchingTemplate = (content: SecuredContentLimited, templateMap: Record<SecureContentType, SecureContentTemplate>): SecureContentTemplate | undefined => {
+  const tags = content.tags as Tags;
+
+  // Try to find matching template by checking each template's type field
+  for (const template of Object.values(templateMap)) {
+    const contentTypeField = template.DataConfig.TypeField || DEFAULT_TYPE_FIELD;
+    const contentType = ((tags[contentTypeField]?.Value as string) || "").toLowerCase().trim();
+
+    if (contentType === template.Type.toLowerCase()) {
+      return template;
+    }
+  }
+
+  return undefined;
 };

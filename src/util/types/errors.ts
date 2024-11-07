@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios";
 
 export class JWError extends Error {
   constructor(message: string) {
@@ -44,9 +43,10 @@ const errorMap: Record<number, new (message: string) => JWError> = {
  * @throws {JWError} - Appropriate error based on the input error
  */
 export const throwError = (e: unknown): never => {
-  if (isAxiosError(e)) {
-    const status = e.response?.status;
-    const message = e.response?.data?.message || e.message;
+  if ((e as Error).name === "AxiosError") {
+    const error = e as any;
+    const status = error.response?.status;
+    const message = error.response?.data?.message || error.message;
 
     // Handle specific status codes
     if (status) {
@@ -61,8 +61,13 @@ export const throwError = (e: unknown): never => {
     throw new JWError(message);
   }
 
+  if (e instanceof JWError) {
+    throw e;
+  }
+
   // Handle non-Axios errors
   if (e instanceof Error) {
+    console.debug("JustWhere API: error thrown:", e);
     throw new JWError(e.message);
   }
 
