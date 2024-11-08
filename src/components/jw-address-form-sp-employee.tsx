@@ -31,6 +31,36 @@ export interface ContentFormProps {
   onError: OnErrorFcn;
 }
 
+const maskFields = (address: Address): Address => {
+  address.IndividualID = valueOrHidden(address?.IndividualID);
+  address.ID = valueOrHidden(address?.ID);
+  address.Label = valueOrHidden(address?.Label);
+  address.Name = valueOrHidden(address?.Name);
+  address.Street1 = valueOrHidden(address?.Street1);
+  address.Street2 = valueOrHidden(address?.Street2);
+  address.Street3 = valueOrHidden(address?.Street3);
+  address.City = valueOrHidden(address?.City);
+  address.State = valueOrHidden(address?.State);
+  address.PostCode = valueOrHidden(address?.PostCode);
+  address.Country = valueOrHidden(address?.Country);
+  address.Phone = valueOrHidden(address?.Phone);
+  address.Email = valueOrHidden(address?.Email);
+
+  for (const key in address.Tags) {
+    const tag = address.Tags[key];
+    if (tag === undefined) address.Tags[key] = "hidden";
+    if (tag === null) address.Tags[key] = "hidden";
+    if (tag === "") address.Tags[key] = "hidden";
+  }
+
+  return address;
+};
+
+const valueOrHidden = (field: string | undefined): string => {
+  if (field === undefined || field === null || field.trim().length === 0) return "hidden";
+  return field;
+};
+
 const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
   hostPort,
   authToken,
@@ -174,7 +204,7 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
             return;
           }
 
-          // filter out any shares that have a beneficiary ID filled in
+          // only keep addresses that are not shared with a beneficiary
           response.shares = response.shares.filter((share) => share.beneficiaryID === NULL_UUID);
 
           console.debug(`JustWhere: individual has shared ${response.shares.length} addresses with service provider`);
@@ -244,6 +274,13 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
               response.content.Type.toLowerCase() === selectedContentTemplate.Type.toLowerCase() ||
               response.content.ID.toLowerCase() === selectedContentTemplate.ID.toLowerCase())
           )
+          .map((response) => {
+            // if the content is an address, then mask the fields that are not relevant to the service provider
+            if (response.content.Type.toUpperCase() === "ADDRESS") {
+              response.content.Content = maskFields(response.content.Content as Address);
+            }
+            return response;
+          })
           .reduce((acc, response) => {
             acc[response.content.ID] = response.content;
             return acc;
