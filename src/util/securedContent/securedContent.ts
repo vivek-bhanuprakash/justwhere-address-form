@@ -114,23 +114,36 @@ const GetSecureContentUsingIDAndToken = async (request: TokenContentRequest): Pr
   // if the content type is address, then we can just use the address content handler
   // otherwise, we have to use the secure content handler
 
+  const hasAddressTemplate = request.contentTemplates.some(template => template.Type.toUpperCase() === CONTENT_TYPE_ADDRESS);
   const config = CreateAPIConfig(request);
   const api = new SharedSecuredcontentApi(config);
 
   if ("serviceProviderID" in request) {
-    try {
-      const response = await retryOperation(() => GetAddressUsingPrimaryToken({
-        hostPort: request.hostPort,
-        authToken: request.authToken,
-        addressID: request.contentID,
-        serviceProviderID: request.serviceProviderID,
-        token: request.token,
-      }));
-      return {
-        request,
-        content: formatAddressContent(response.address),
-      };
-    } catch {
+    if (hasAddressTemplate) {
+      try {
+        const response = await retryOperation(() => GetAddressUsingPrimaryToken({
+          hostPort: request.hostPort,
+          authToken: request.authToken,
+          addressID: request.contentID,
+          serviceProviderID: request.serviceProviderID,
+          token: request.token,
+        }));
+        return {
+          request,
+          content: formatAddressContent(response.address),
+        };
+      } catch {
+        const response = await retryOperation(() =>
+          api.getSharedSecuredcontent(request.contentID, request.token, request.serviceProviderID, request.individualID)
+        );
+        const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+        const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+        return {
+          request,
+          content: content,
+        };
+      }
+    } else {
       const response = await retryOperation(() =>
         api.getSharedSecuredcontent(request.contentID, request.token, request.serviceProviderID, request.individualID)
       );
@@ -140,23 +153,34 @@ const GetSecureContentUsingIDAndToken = async (request: TokenContentRequest): Pr
         request,
         content: content,
       };
-
     }
 
   } else if ("beneficiaryID" in request) {
-    try {
-      const response = await retryOperation(() => GetAddressUsingSecondaryToken({
-        hostPort: request.hostPort,
-        authToken: request.authToken,
-        addressID: request.contentID,
-        beneficiaryID: request.beneficiaryID,
-        token: request.token,
-      }));
-      return {
-        request,
-        content: formatAddressContent(response.address),
-      };
-    } catch {
+    if (hasAddressTemplate) {
+      try {
+        const response = await retryOperation(() => GetAddressUsingSecondaryToken({
+          hostPort: request.hostPort,
+          authToken: request.authToken,
+          addressID: request.contentID,
+          beneficiaryID: request.beneficiaryID,
+          token: request.token,
+        }));
+        return {
+          request,
+          content: formatAddressContent(response.address),
+        };
+      } catch {
+        const response = await retryOperation(() =>
+          api.getSharedSecuredcontent(request.contentID, request.token, request.beneficiaryID, request.individualID)
+        );
+        const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+        const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+        return {
+          request,
+          content: content,
+        };
+      }
+    } else {
       const response = await retryOperation(() =>
         api.getSharedSecuredcontent(request.contentID, request.token, request.beneficiaryID, request.individualID)
       );
@@ -169,18 +193,30 @@ const GetSecureContentUsingIDAndToken = async (request: TokenContentRequest): Pr
     }
 
   } else if ("individualID" in request) {
-    try {
-      const response = await retryOperation(() => GetAddressUsingOwnerToken({
-        hostPort: request.hostPort,
-        authToken: request.authToken,
-        individualID: request.individualID,
-        addressID: request.contentID,
-      }));;
-      return {
-        request,
-        content: formatAddressContent(response.address),
-      };
-    } catch {
+    if (hasAddressTemplate) {
+      try {
+        const response = await retryOperation(() => GetAddressUsingOwnerToken({
+          hostPort: request.hostPort,
+          authToken: request.authToken,
+          individualID: request.individualID,
+          addressID: request.contentID,
+        }));;
+        return {
+          request,
+          content: formatAddressContent(response.address),
+        };
+      } catch {
+        const response = await retryOperation(() =>
+          api.getSharedSecuredcontent(request.contentID, request.token, "", request.individualID)
+        );
+        const contents = ConvertToSecureContents([response.data], request.contentTemplates);
+        const content = Object.values(contents).length > 0 ? Object.values(contents)[0][0] : ({} as SecureContent);
+        return {
+          request,
+          content: content,
+        };
+      }
+    } else {
       const response = await retryOperation(() =>
         api.getSharedSecuredcontent(request.contentID, request.token, "", request.individualID)
       );
