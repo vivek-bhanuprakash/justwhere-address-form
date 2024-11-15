@@ -1,4 +1,4 @@
-import { AddressID, BeneficiaryID, IndividualID, JWError, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID, UserID } from "../util";
+import { AddressID, BeneficiaryID, IndividualID, JWError, OwnerToken, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID, UserID } from "../util";
 
 export type OnErrorFcn = (err: JWError) => void;
 export type OnNewPrimaryToken = (individualID: IndividualID, addressID: AddressID, serviceProviderID: ServiceProviderID, token: PrimaryToken) => void;
