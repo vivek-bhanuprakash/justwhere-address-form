@@ -400,7 +400,6 @@ const formatSecureContent = (content: SecuredContentLimited, template: SecureCon
     throw new JWErrorBadRequest("Content ID is missing");
   }
 
-  console.log("JustWhere API: content:", content, "template:", template);
   const labelField = template.DataConfig.LabelField || DEFAULT_LABEL_FIELD;
   const tags = content.tags as Tags;
 

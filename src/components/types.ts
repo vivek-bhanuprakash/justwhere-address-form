@@ -1,4 +1,4 @@
-import { AddressID, BeneficiaryID, IndividualID, JWError, OwnerToken, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID, UserID } from "../util";
+import { AddressID, BeneficiaryID, IndividualID, JWError, PrimaryToken, SecondaryToken, SecureContentID, ServiceProviderID, UserID } from "../util";
 
 export type OnErrorFcn = (err: JWError) => void;
 export type OnNewPrimaryToken = (individualID: IndividualID, addressID: AddressID, serviceProviderID: ServiceProviderID, token: PrimaryToken) => void;
@@ -18,10 +18,10 @@ export enum EmbedMode {
 }
 
 export interface UserInfo {
-  userID: UserID;
-  individualID: IndividualID;
-  serviceProviderID: ServiceProviderID;
-  token: OwnerToken;
+  readonly userID: UserID;
+  readonly individualID: IndividualID;
+  readonly serviceProviderID: ServiceProviderID;
+  readonly token: OwnerToken;
 }
 
 export type OnContentSharedWithServiceProvider = (

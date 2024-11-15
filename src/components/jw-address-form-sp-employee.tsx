@@ -1,24 +1,20 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { IsEmptyUser, useFetchCurrentUserInfo as useFetchCurrentUserInfo } from "../hooks/useFetchCurrentUserInfo";
+import { useFetchServiceProvider } from "../hooks/useFetchServiceProvider";
+import { useFetchServiceProviderTemplates } from "../hooks/useFetchServiceProviderTemplates";
 
 import {
-  Address, AllAddressSharesWithServiceProviderRequest, AllSecureContentSharesWithServiceProviderRequest,
-  CurrentUserInfoRequest,
-  GenericSecureContent, GetAllAddressSharesWithServiceProvider, GetAllSecureContentSharesWithServiceProvider,
-  GetCurrentUserInfo, GetSecureContentUsingPrimaryToken, GetServiceProviderInfo, GetTemplatesForServiceProvider,
-  IndividualID,
-  IsValidURL,
-  JWError,
-  JWErrorAuthenticationRequired, JWErrorNotFound, NULL_UUID, PrimaryToken, PrimaryTokenSecureContentRequest,
+  Address, AllAddressSharesWithServiceProviderRequest, AllSecureContentSharesWithServiceProviderRequest, GenericSecureContent, GetAllAddressSharesWithServiceProvider, GetAllSecureContentSharesWithServiceProvider, GetSecureContentUsingPrimaryToken, IndividualID, JWError, NULL_UUID, PrimaryToken, PrimaryTokenSecureContentRequest,
   SecureContent,
   SecureContentID,
-  SecureContentTemplate,
-  ServiceProvider,
-  ServiceProviderID
+  SecureContentTemplate, ServiceProviderID
 } from "../util";
 import AddressForm from "./internal/address";
 import Label from "./internal/label";
 import SecureContentForm from "./internal/secure_content_form";
-import { OnErrorFcn, UserInfo } from "./types";
+import { OnErrorFcn } from "./types";
+import { useFetchContentTemplates } from "../hooks/useFetchContentTemplates";
+import NothingShared from "./internal/nothing_shared";
 
 const UUID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
 
@@ -69,18 +65,13 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
   serviceProviderID,
   onError,
 }) => {
-  const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>({ userID: "", individualID: "", serviceProviderID: "", token: "" });
-  const [internalIndividualID, setInternalIndividualID] = useState<IndividualID>("");
-
+  const { currentUser, } = useFetchCurrentUserInfo({ hostPort, authToken, onError });
+  const { serviceProvider, } = useFetchServiceProvider({ hostPort, authToken, currentUser, serviceProviderID, onError });
+  const { templates: spTemplates, } = useFetchServiceProviderTemplates({ hostPort, authToken, currentUser, serviceProvider, onError });
+  const { templates: contentTemplates, } = useFetchContentTemplates({ currentUser, spTemplates, contentTypeFilter, onError });
+  const [selectedContentTemplate, setSelectedContentTemplate] = useState<SecureContentTemplate>({} as SecureContentTemplate);
   const [secureContents, setSecureContents] = useState<Record<SecureContentID, SecureContent>>({} as Record<SecureContentID, SecureContent>);
   const [selectedSecureContent, setSelectedSecureContent] = useState<SecureContent>({} as SecureContent);
-
-  const [contentTemplates, setContentTemplates] = useState<SecureContentTemplate[]>([]);
-  const [spTemplates, setSPTemplates] = useState<SecureContentTemplate[]>([]);
-  const [selectedContentTemplate, setSelectedContentTemplate] = useState<SecureContentTemplate>({} as SecureContentTemplate);
-
-  const [sharedWithServiceProvider, setSharedWithServiceProvider] = useState<boolean>(false);
-  const [serviceProvider, setServiceProvider] = useState<ServiceProvider>({} as ServiceProvider);
 
   const raiseError = useCallback((err: JWError) => {
     if (onError === undefined || typeof onError !== "function") {
@@ -107,10 +98,6 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
     setSelectedSecureContent(secureContents?.[event.target.value] || ({} as SecureContent));
   };
 
-  const resetServiceProvider = () => {
-    setServiceProvider({} as ServiceProvider);
-  };
-
   const resetSecureContents = () => {
     setSecureContents({} as Record<SecureContentID, SecureContent>);
   };
@@ -119,20 +106,8 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
     setSelectedSecureContent({} as SecureContent);
   };
 
-  const resetSPTemplates = () => {
-    setSPTemplates([]);
-  };
-
-  const resetContentTemplates = () => {
-    setContentTemplates([]);
-  };
-
   const resetSelectedContentTemplate = () => {
     setSelectedContentTemplate({} as SecureContentTemplate);
-  };
-
-  const resetCurrentUserInfo = () => {
-    setCurrentUserInfo({} as UserInfo);
   };
 
   /* when the secure contents change, select a secure content from it
@@ -164,7 +139,7 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
 
   /* when the selected content type changes, retrieve the matching shared contents */
   useEffect(() => {
-    const indID = individualID.trim();
+    const indID = individualID?.trim();
 
     if (!indID || !indID.trim().length) {
       console.error("JustWhere: individual ID is required");
@@ -324,184 +299,6 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
     return;
   }, [contentTemplates]);
 
-  /* when the service provider templates, or the provided content filter changes,
-  apply the content filter on the service provider templates */
-  useEffect(() => {
-    if (!currentUserInfo?.individualID?.trim().length) {
-      return;
-    }
-
-    if (!contentTypeFilter || !contentTypeFilter.length) {
-      console.error("JustWhere: no content type filter provided or content type filter is not an array of strings");
-      return raiseError(new JWError("no content type filter provided or content type filter is not an array of strings"));
-    }
-
-    if (!Array.isArray(contentTypeFilter) || !contentTypeFilter.every((item) => typeof item === "string")) {
-      console.error("JustWhere: no content type filter provided or content type filter is not an array of strings");
-      return raiseError(new JWError("no content type filter provided or content type filter is not an array of strings"));
-    }
-
-    if (!spTemplates || !spTemplates.length) {
-      resetContentTemplates();
-      console.debug("JustWhere: no service provider templates available");
-      return;
-    }
-
-    // filter spTemplates by provided content type filter
-    const filteredTemplates = Array<SecureContentTemplate>();
-    for (const cTemplate of spTemplates) {
-      for (const fTemplate of contentTypeFilter) {
-        if (cTemplate.Type.toLowerCase().trim() === fTemplate.toLowerCase().trim() || cTemplate.ID.toLowerCase().trim() === fTemplate.toLowerCase().trim()) {
-          filteredTemplates.push(cTemplate);
-        }
-      }
-    }
-
-    console.debug(`JustWhere: ${filteredTemplates.length} service provider templates match content type filter`, contentTypeFilter);
-
-    setContentTemplates(filteredTemplates);
-  }, [spTemplates, contentTypeFilter]);
-
-  /* when the service provider changes, retrieve default and service provider templates */
-  useEffect(() => {
-
-    if (!serviceProvider || !serviceProvider.ID || !serviceProvider.ID.trim().length) {
-      resetSPTemplates();
-      return;
-    }
-
-    // fetch templates associated with service provider of current user
-    const fetchTemplates = async () => {
-      try {
-
-        const defaultTemplates = await GetTemplatesForServiceProvider({
-          hostPort,
-          authToken,
-          serviceProviderID: currentUserInfo.serviceProviderID,
-        });
-
-        console.debug("JustWhere: retrieved", defaultTemplates.length, "default templates");
-
-        let spTemplates = new Array<SecureContentTemplate>();
-        try {
-          spTemplates = await GetTemplatesForServiceProvider({
-            hostPort
-            , authToken
-            , serviceProviderID: serviceProvider.ID
-          });
-        } catch (e) {
-          if (!(e instanceof JWErrorNotFound)) {
-            throw e;
-          }
-        }
-
-        console.debug("JustWhere: retrieved", spTemplates.length, "service provider templates");
-
-        const allTemplates = [...spTemplates];
-
-        // any sp template having same type as a default template will take
-        // precedence over the default template
-        const seenTypes = spTemplates.reduce((acc, cur) => {
-          acc.add(cur.Type.trim().toLowerCase());
-          return acc;
-        }, new Set<string>());
-
-        defaultTemplates.forEach((template) => {
-          if (seenTypes.has(template.Type.trim().toLowerCase())) {
-            console.debug("JustWhere: skipping default template", template.Type.trim().toLowerCase(), "as it is already present in the service provider templates");
-            return;
-          }
-          seenTypes.add(template.Type.trim().toLowerCase());
-          allTemplates.push(template);
-        });
-
-        setSPTemplates(allTemplates);
-      } catch (error) {
-        console.error("JustWhere: error fetching or processing templates:", error);
-        return raiseError(error as JWError);
-      }
-    };
-
-    fetchTemplates();
-  }, [serviceProvider]);
-
-  /* when the service provider ID changes, retrieve default and service provider templates */
-  useEffect(() => {
-    const spID = serviceProviderID;
-
-    // Early return if no user ID
-    if (!currentUserInfo.individualID?.trim()) {
-      resetServiceProvider();
-      return;
-    }
-
-    if (!spID || !spID.trim().length) {
-      resetServiceProvider();
-      console.error("JustWhere: no valid service provider ID provided or service provider ID is not a string");
-      return raiseError(new JWError("no valid service provider ID provided or service provider ID is not a string"));
-    }
-
-    if (!UUID_PATTERN.test(spID)) {
-      console.error("JustWhere: service provider ID is not a valid UUID");
-      return raiseError(new JWError("service provider ID is not a valid UUID"));
-    }
-
-    const fetchServiceProvider = async () => {
-      try {
-        const response = await GetServiceProviderInfo({
-          hostPort,
-          authToken,
-          serviceProviderID: spID,
-        });
-
-        setServiceProvider(response.serviceProvider);
-      } catch (error) {
-        console.error("JustWhere: error fetching service provider:", error);
-        raiseError(error as JWError);
-      }
-    };
-
-    fetchServiceProvider();
-  }, [currentUserInfo.individualID, serviceProviderID]);
-
-  /* load current user info */
-  useEffect(() => {
-
-    if (hostPort === undefined || typeof hostPort !== "string" || hostPort.trim().length === 0) {
-      console.error("JustWhere: no hostPort provided or hostPort is not a string");
-      resetCurrentUserInfo();
-      return raiseError(new JWError("no hostPort or hostPort is not a string or is empty"));
-    }
-
-    if (!IsValidURL(hostPort)) {
-      console.error("JustWhere: hostPort is not a valid URL");
-      resetCurrentUserInfo();
-      return raiseError(new JWError("hostPort is not a valid URL"));
-    }
-
-    if (authToken === undefined || authToken.trim().length === 0) {
-      console.error("JustWhere: no authToken provided or authToken is not a string");
-      resetCurrentUserInfo();
-      return raiseError(new JWErrorAuthenticationRequired("no authToken or authToken is not a string or is empty"));
-    }
-
-    const req: CurrentUserInfoRequest = { hostPort: hostPort, authToken: authToken };
-    GetCurrentUserInfo(req)
-      .then((response) => {
-        setCurrentUserInfo({
-          userID: response.userID.trim(),
-          individualID: response.individualID.trim(),
-          serviceProviderID: response.serviceProviderID.trim(),
-          token: response.token.trim(),
-        });
-        setInternalIndividualID(response.individualID.trim());
-      })
-      .catch((error) => {
-        console.error("JustWhere: error fetching current user info: ", error);
-        resetCurrentUserInfo();
-        return raiseError(error as JWError);
-      });
-  }, [hostPort, authToken, raiseError]);
 
   return (
     <div className="@container/address-content grid min-w-60 grid-cols-1 items-center justify-start gap-3">
@@ -513,10 +310,10 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
         )}
 
         <div className="flex-col justify-around self-center">
-          {currentUserInfo?.userID?.trim().length !== 0 ? (
+          {!IsEmptyUser(currentUser) ? (
             <>
               <p className="@xs/address-header:text-md ml-4 text-sm font-semibold uppercase text-gray-200">Securely Share, Track and Notify</p>
-              <p className="ml-4 text-sm font-light text-gray-200">{currentUserInfo.userID}</p>
+              <p className="ml-4 text-sm font-light text-gray-200">{currentUser.userID}</p>
             </>
           ) : (
             <>
@@ -542,11 +339,10 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
         </div>
 
         <div>
-          {Object.keys(secureContents).length > 0 && (
+          {Object.keys(secureContents).length > 0 ? (
             <>
               <Label htmlFor="mysecurecontents">Select {selectedContentTemplate.Label}</Label>
-              {selectedContentTemplate.Type.toUpperCase() === "ADDRESS" ? (
-                <select
+              <select
                   id="mysecurecontents"
                   className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
                   value={selectedSecureContent.ID}
@@ -556,24 +352,14 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
                     <option value={myContentID}>{secureContents[myContentID].Label}</option>
                   ))}
                 </select>
-              ) : (
-                <select
-                  id="mysecurecontents"
-                  className="w-full rounded-sm border border-gray-300 bg-gray-50 p-1.5 text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-blue-500"
-                  value={selectedSecureContent.ID}
-                  onChange={onSelectedMyContentChanged}
-                >
-                  {Object.keys(secureContents).map((myContent) => (
-                    <option value={myContent}>{secureContents[myContent].Label}</option>
-                  ))}
-                </select>
-              )}
             </>
+          ) : (
+          <NothingShared/>
           )}
         </div>
       </div>
 
-      {selectedSecureContent?.Type?.length > 0 && (
+      {selectedSecureContent?.Type?.length > 0 ? (
         <>
           {selectedSecureContent.Type.toUpperCase() === "ADDRESS" ? (
             <div className="flex flex-col gap-3 p-3 pt-0">
@@ -588,8 +374,9 @@ const JWContentFormServiceProviderEmployee: React.FC<ContentFormProps> = ({
             </div>
           )}
         </>
+      ) : (
+        Object.keys(secureContents).length > 0 && <NothingShared />
       )}
-
     </div>
   );
 };

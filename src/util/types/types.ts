@@ -16,11 +16,11 @@ export type TemplateID = string;
 
 // Regular expression to check if string pattern is a UUID
 // Source: https://melvingeorge.me/blog/check-if-string-valid-uuid-regex-javascript
-export const ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
+export const ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
+export const NULL_UUID = "00000000-0000-0000-0000-000000000000";
 export const API_TIMEOUT = 30000; // 30 seconds
 export const MAX_RETRIES = 3;
 export const RETRY_DELAY = 1000; // 1 second
-export const NULL_UUID = "00000000-0000-0000-0000-000000000000";
 
 export type TagValue = undefined | null | string | number | boolean | Record<string, undefined | null | string | number | boolean | object>;
 
@@ -51,6 +51,27 @@ export interface Address {
   Tags?: Record<string, TagValue>;
 }
 
+export const EMPTY_ADDRESS: Address = {
+  ID: "",
+  IndividualID: "",
+  Label: "",
+  Name: "",
+  Street1: "",
+  Street2: "",
+  Street3: "",
+  City: "",
+  State: "",
+  PostCode: "",
+  Country: "",
+  Phone: "",
+  Email: "",
+  Tags: {},
+};
+
+export const IsEmptyAddress = (address: Address): boolean => {
+  return (address.ID === undefined || address.ID === null || address.ID.trim().length === 0);
+};
+
 interface Provider {
   Name: string;
   Contact: string;
@@ -73,9 +94,56 @@ export interface Beneficiary extends Provider {
   ID: BeneficiaryID;
 }
 
+export const EMPTY_BENEFICIARY: Beneficiary = {
+  ID: "",
+  Name: "",
+  Contact: "",
+  Description: "",
+  Category: "",
+  Street1: "",
+  Street2: "",
+  Street3: "",
+  City: "",
+  State: "",
+  PostCode: "",
+  Country: "",
+  Phone: "",
+  Email: "",
+  Website: "",
+  Tags: {},
+};
+
+export const IsEmptyBeneficiary = (sp: Beneficiary): boolean => {
+  return (sp.ID === undefined || sp.ID === null || sp.ID.trim().length === 0);
+};
+
+
 export interface ServiceProvider extends Provider {
   ID: ServiceProviderID;
 }
+
+export const EMPTY_SERVICE_PROVIDER: ServiceProvider = {
+  ID: "",
+  Name: "",
+  Contact: "",
+  Description: "",
+  Category: "",
+  Street1: "",
+  Street2: "",
+  Street3: "",
+  City: "",
+  State: "",
+  PostCode: "",
+  Country: "",
+  Phone: "",
+  Email: "",
+  Website: "",
+  Tags: {},
+};
+
+export const IsEmptyServiceProvider = (sp: ServiceProvider): boolean => {
+  return (sp.ID === undefined || sp.ID === null || sp.ID.trim().length === 0);
+};
 
 export const IsUuid = (id: string): boolean => {
   return ID_PATTERN.test(id);

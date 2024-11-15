@@ -74,7 +74,6 @@ const SPPage: React.FC = () => {
 
   const onError = (error: JWError) => {
     if (jwHost === undefined || jwHost.trim().length === 0) {
-      console.debug("App: waiting for JW host to be set");
       return;
     }
     if (error instanceof JWErrorAuthenticationRequired) {
@@ -85,7 +84,6 @@ const SPPage: React.FC = () => {
   };
 
   const setActiveData = (d: Data) => {
-    console.debug("App: setting active data:", d);
     setJWHost(d.HostPort);
     setIndividualID(d.IndividualID);
     setContentID(d.ContentID);
@@ -248,18 +246,17 @@ const SPPage: React.FC = () => {
         }
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error("App: error fetching data:", error);
       });
     let token = sessionStorage.getItem(TOKEN_STORAGE_KEY) || "";
     if (token !== "") {
       token = token.split("Bearer ")[1];
-      console.debug("token:", token.substring(0, 5) + "..." + token.substring(token.length - 5));
       setAuthToken(token);
     }
 
     return () => {
       abortController.abort();
-      console.log("aborted any pending fetch");
+      console.log("App: aborted any pending fetch");
     };
   }, []);
 
