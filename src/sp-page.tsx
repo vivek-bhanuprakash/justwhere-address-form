@@ -319,8 +319,8 @@ const SPPage: React.FC = () => {
                   hostPort={jwHost}
                   authToken={authToken}
                   contentTypeFilter={preferredContentTypes}
-                  contentID={contentID}
-                  contentType={contentType}
+                  // contentID={contentID}
+                  // contentType={contentType}
                   serviceProviderID={serviceProviderID}
                   beneficiaryIDs={preferredBeneficiaries}
                   onError={onError}
