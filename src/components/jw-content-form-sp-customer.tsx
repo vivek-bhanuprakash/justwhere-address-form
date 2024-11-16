@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 
 import {
   Address,
-  AddressID,
   Beneficiary,
   BeneficiaryID,
   BeneficiarySharesRequest,
@@ -16,13 +15,8 @@ import {
   GetOwnerSecureContents,
   GetSharesWithBeneficiary,
   GetSharesWithServiceProvider,
-  GetTemplatesForServiceProvider,
   IndividualID,
-  IsValidURL,
   JWError,
-  JWErrorAuthenticationRequired,
-  JWErrorBadRequest,
-  JWErrorNotFound,
   OwnerSecureContentsRequest,
   PrimaryToken,
   PrimaryTokenRequest,
@@ -32,11 +26,9 @@ import {
   SecureContent,
   SecureContentID,
   SecureContentTemplate,
-  ServiceProvider,
   ServiceProviderID,
   ServiceProviderSharesRequest
 } from "../util";
-import { GetBeneficiaryInfo, GetServiceProviderInfo } from "../util/providers/providers";
 import AddressForm from "./internal/address";
 import Label from "./internal/label";
 import SecureContentForm from "./internal/secure_content_form";
@@ -47,9 +39,7 @@ import {
   OnContentSharedWithServiceProvider,
   OnContentUnsharedWithBeneficiary,
   OnContentUnsharedWithServiceProvider,
-  OnErrorFcn,
-  UserInfo
-} from "./types";
+  OnErrorFcn} from "./types";
 import { useFetchCurrentUserInfo } from "../hooks/useFetchCurrentUserInfo";
 import { useFetchServiceProvider } from "../hooks/useFetchServiceProvider";
 import { useFetchServiceProviderTemplates } from "../hooks/useFetchServiceProviderTemplates";
@@ -87,7 +77,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   onContentSharedWithBeneficiary,
   onContentUnsharedWithBeneficiary,
 }) => {
-  
+
   const { currentUser, } = useFetchCurrentUserInfo({ hostPort, authToken, onError });
   const { serviceProvider, } = useFetchServiceProvider({ hostPort, authToken, currentUser, serviceProviderID, onError });
   const { templates: spTemplates, } = useFetchServiceProviderTemplates({ hostPort, authToken, currentUser, serviceProvider, onError });
@@ -103,7 +93,7 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   const [showUnshareSecondaryToken, setShowUnshareSecondaryToken] = useState<boolean>(false);
 
   const [sharedWithServiceProvider, setSharedWithServiceProvider] = useState<boolean>(false);
-  
+
   const [reprocessOne, setReprocessOne] = useState<boolean>(false);
 
   const [sharedWithBeneficiary, setSharedWithBeneficiary] = useState<boolean>(false);
@@ -412,13 +402,13 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   }, [selectedSecureContent, serviceProvider, reprocessOne]);
 
   useEffect(() => {
-    if(!selectedSecureContent || selectedSecureContent.ID === undefined || selectedSecureContent.ID.trim().length === 0) {
+    if (!selectedSecureContent || selectedSecureContent.ID === undefined || selectedSecureContent.ID.trim().length === 0) {
       setSelectedSecureContent(secureContents?.[Object.keys(secureContents)[0]] || ({} as SecureContent));
       return;
     }
 
     const selection = secureContents?.[selectedSecureContent.ID] || ({} as SecureContent);
-    if(!selection || !selection.ID) {
+    if (!selection || !selection.ID) {
       console.warn(`JustWhere: the selected secure content (${selectedSecureContent.ID} - ${selectedSecureContent.Type}) was not found in the list of secure contents. resetting to first content`);
       setSelectedSecureContent(secureContents?.[Object.keys(secureContents)[0]] || ({} as SecureContent));
       return;
@@ -469,13 +459,13 @@ const JWContentFormServiceProviderCustomer: React.FC<ContentFormProps> = ({
   /* select a content type if necessary while considering any provided content template */
   useEffect(() => {
     // if there is no selected content template, then select the first content template
-    if(!selectedContentTemplate || !selectedContentTemplate.Type || !selectedContentTemplate.Type.trim().length) {
+    if (!selectedContentTemplate || !selectedContentTemplate.Type || !selectedContentTemplate.Type.trim().length) {
       setSelectedContentTemplate(contentTemplates?.[0] || ({} as SecureContentTemplate));
       return;
     }
 
     const selection = contentTemplates?.find((template) => template.ID.toLowerCase() === selectedContentTemplate.ID.toLowerCase() || template.Type.toLowerCase() === selectedContentTemplate.Type.toLowerCase());
-    if(!selection || !selection.ID) {
+    if (!selection || !selection.ID) {
       console.warn(`JustWhere: the selected content template (${selectedContentTemplate.ID}, ${selectedContentTemplate.Type}) was not found in the list of content templates. resetting to first template`);
       setSelectedContentTemplate(contentTemplates[0]);
       return;
