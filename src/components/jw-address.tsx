@@ -1,71 +1,50 @@
 import React, { useEffect, useState } from "react";
-import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
-import JWAddressForm, { JWErrorAuthenticationRequired, UserInfo } from "./jw-address-form";
+import {
+  AddressID,
+  BeneficiaryID,
+  CurrentUserInfoRequest,
+  GetCurrentUserInfo,
+  IndividualID,
+  JWError,
+  JWErrorAuthenticationRequired,
+  PrimaryToken,
+  SecondaryToken,
+  ServiceProviderID,
+} from "../util";
+import JWContentFormServiceProviderCustomer from "./jw-content-form-sp-customer";
 import JWLogin, { OnLoginComplete } from "./jw-login";
-
-// Regular expression to check if string is a valid UUID
-// Source: https://melvingeorge.me/blog/check-if-string-valid-uuid-regex-javascript
-export const JW_ID_PATTERN = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
-
-export enum EmbedMode {
-  SERVICE_PROVIDER,
-  BENEFICIARY,
-}
-
-export type ID = string;
-export type PrimaryToken = string;
-export type SecondaryToken = string;
-
-export class JWError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWError";
-  }
-}
-
-export class JWAuthenticationRequired extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorAuthenticationRequired";
-  }
-}
-
-export class JWErrorForbidden extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorForbidden";
-  }
-}
-
-export class JWErrorBadRequest extends JWError {
-  constructor(message: string) {
-    super(message);
-    this.name = "JWErrorBadRequest";
-  }
-}
-
-export type OnErrorFcn = (err: JWError) => void;
-export type OnNewPrimaryToken = (individualID: ID, addressID: ID, serviceProviderID: ID, token: PrimaryToken) => void;
-export type OnNewSecondaryToken = (serviceProviderID: ID, beneficiaryID: ID, token: SecondaryToken) => void;
-export type OnAuthenticationRequired = (url: string) => void;
+import {
+  EmbedMode,
+  OnAuthenticationRequired,
+  OnContentSharedWithBeneficiary,
+  OnContentSharedWithServiceProvider,
+  OnContentUnsharedWithBeneficiary,
+  OnContentUnsharedWithServiceProvider,
+  OnErrorFcn,
+  UserInfo,
+} from "./types";
 
 export interface JWAddressProps {
   embedAs: EmbedMode;
   hostPort: string;
 
-  individualID?: ID;
-  addressID?: ID;
+  individualID?: IndividualID;
+  addressID?: AddressID;
 
-  serviceProviderID?: ID;
+  serviceProviderID?: ServiceProviderID;
   primaryToken?: PrimaryToken;
 
-  beneficiaryID?: ID;
+  beneficiaryIDs?: BeneficiaryID[];
   secondaryToken?: SecondaryToken;
 
   onAuthenticationRequired?: OnAuthenticationRequired;
   onError?: OnErrorFcn;
-  onNewPrimaryToken?: OnNewPrimaryToken;
-  onNewSecondaryToken?: OnNewSecondaryToken;
+
+  onContentSharedWithServiceProvider?: OnContentSharedWithServiceProvider;
+  onContentUnsharedWithServiceProvider?: OnContentUnsharedWithServiceProvider;
+
+  onContentSharedWithBeneficiary?: OnContentSharedWithBeneficiary;
+  onContentUnsharedWithBeneficiary?: OnContentUnsharedWithBeneficiary;
 }
 
 const JWAddress: React.FC<JWAddressProps> = ({
@@ -75,39 +54,44 @@ const JWAddress: React.FC<JWAddressProps> = ({
   addressID,
   serviceProviderID,
   primaryToken,
-  beneficiaryID,
+  beneficiaryIDs,
   secondaryToken,
   onAuthenticationRequired,
   onError,
-  onNewPrimaryToken,
-  onNewSecondaryToken,
+  onContentSharedWithServiceProvider,
+  onContentUnsharedWithServiceProvider,
+  onContentSharedWithBeneficiary,
+  onContentUnsharedWithBeneficiary,
 }) => {
   const emptyUserInfo: UserInfo = {
     userID: "",
     individualID: "",
+    serviceProviderID: "",
+    token: "",
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUserInfo, setCurrentUserInfo] = useState<UserInfo>(emptyUserInfo);
 
-  const onLoginComplete: OnLoginComplete = (userID: string, individualID: ID) => {
+  const onLoginComplete: OnLoginComplete = (userID: string, individualID: IndividualID) => {
     const userInfo: UserInfo = {
       userID: userID,
       individualID: individualID,
+      serviceProviderID: "",
+      token: "",
     };
-
-    console.info("JWAddress: current user info:", userInfo);
 
     setCurrentUserInfo(userInfo);
     setIsLoggedIn(true);
   };
 
   const onErrorInternal: OnErrorFcn = (err: JWError) => {
-    console.error("JWAddress: onErrorInternal: ", err);
     if (err instanceof JWErrorAuthenticationRequired) {
       const ui: UserInfo = {
         userID: "",
         individualID: "",
+        serviceProviderID: "",
+        token: "",
       };
       setCurrentUserInfo(ui);
       return setIsLoggedIn(false);
@@ -120,24 +104,12 @@ const JWAddress: React.FC<JWAddressProps> = ({
   useEffect(() => {
     const fnEffect = async () => {
       if (hostPort !== undefined && hostPort.trim().length > 0) {
-        const config: APIIndividualsConfig = new APIIndividualsConfig({
-          basePath: `${hostPort}/api`,
-          baseOptions: {
-            withCredentials: true,
-          },
-        });
-
-        const api = new APIIndividuals(config);
         try {
           setIsLoggedIn(false);
-          const response = await api.getCurrentUserInfo();
-          const userInfo = response.data || null;
-          if (userInfo === null) return;
-          if (userInfo.IndividualID === undefined) return;
-          if (typeof userInfo.IndividualID !== "string") return;
-          if (userInfo.IndividualID.trim().length === 0) return;
-          // if (!JW_ID_PATTERN.test(userInfo.IndividualID)) return;
-          onLoginComplete(userInfo.UserID || "", userInfo.IndividualID);
+          const request: CurrentUserInfoRequest = { hostPort: hostPort, authToken: "" };
+          const response = await GetCurrentUserInfo(request);
+          if (response.individualID === undefined) return;
+          onLoginComplete(response.userID, response.individualID);
         } catch (e) {
           console.error("JWAddress: ", e);
         }
@@ -149,18 +121,21 @@ const JWAddress: React.FC<JWAddressProps> = ({
   return (
     <>
       {isLoggedIn ? (
-        <JWAddressForm
+        <JWContentFormServiceProviderCustomer
           hostPort={hostPort}
-          userInfo={currentUserInfo}
-          individualID={individualID || ""}
-          addressID={addressID}
-          serviceProviderID={serviceProviderID}
-          primaryToken={primaryToken}
-          beneficiaryID={beneficiaryID}
-          secondaryToken={secondaryToken}
+          authToken={""}
+          contentTypeFilter={[]}
+          // contentID={addressID}
+          // contentType={""}
+          // individualID={individualID || ""}
+          serviceProviderID={serviceProviderID || ""}
+          beneficiaryIDs={beneficiaryIDs}
+          // secondaryToken={secondaryToken}
           onError={onErrorInternal}
-          onNewPrimaryToken={onNewPrimaryToken}
-          onNewSecondaryToken={onNewSecondaryToken}
+          onContentSharedWithServiceProvider={onContentSharedWithServiceProvider}
+          onContentUnsharedWithServiceProvider={onContentUnsharedWithServiceProvider}
+          onContentSharedWithBeneficiary={onContentSharedWithBeneficiary}
+          onContentUnsharedWithBeneficiary={onContentUnsharedWithBeneficiary}
         />
       ) : (
         <JWLogin hostPort={hostPort} onLoginComplete={onLoginComplete} onError={onError} />

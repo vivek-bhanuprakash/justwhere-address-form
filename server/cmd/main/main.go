@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mkhadilk/logrotate"
 	"github.com/vivek-bhanuprakash/justwhere-address-form/server/internal/services/authentication"
+	"github.com/vivek-bhanuprakash/justwhere-address-form/server/internal/services/handlers"
 )
 
 func init() {
@@ -67,6 +68,14 @@ func main() {
 			ctx.File("./data/data.json")
 			log.Println("Sending ./data/data.json file")
 			ctx.Abort()
+			return
+		})
+	}
+
+	apiGroup := router.Group("/api")
+	{
+		apiGroup.GET("/setauth", func(ctx *gin.Context) {
+			handlers.SaveToken(ctx)
 			return
 		})
 	}

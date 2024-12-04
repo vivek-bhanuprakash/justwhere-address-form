@@ -1,22 +1,41 @@
 {
-  "https://localhost": {
-    "individualID": "",
-    "addressID": "",
-    "serviceProviderID": "",
-    "serviceProviderAccountID": "",
-    "primaryToken": "",
-    "beneficiaryID": "",
-    "beneficiaryAccountID": "",
-    "secondaryToken": ""
-  },
   "https://dev.justwhere.io": {
     "individualID": "",
-    "addressID": "",
+    "contentID": "",
+    "contentType": "",
     "serviceProviderID": "",
     "serviceProviderAccountID": "",
     "primaryToken": "",
     "beneficiaryID": "",
     "beneficiaryAccountID": "",
-    "secondaryToken": ""
+    "secondaryToken": "",
+    "preferredBeneficiaries": "",
+    "preferredContentTypes": ""
+  },
+  "https://justwhere.io": {
+    "individualID": "",
+    "contentID": "",
+    "contentType": "",
+    "serviceProviderID": "",
+    "serviceProviderAccountID": "",
+    "primaryToken": "",
+    "beneficiaryID": "",
+    "beneficiaryAccountID": "",
+    "secondaryToken": "",
+    "preferredBeneficiaries": "",
+    "preferredContentTypes": ""
+  },
+  "https://localhost": {
+    "individualID": "",
+    "contentID": "",
+    "contentType": "",
+    "serviceProviderID": "",
+    "serviceProviderAccountID": "",
+    "primaryToken": "",
+    "beneficiaryID": "",
+    "beneficiaryAccountID": "",
+    "secondaryToken": "",
+    "preferredBeneficiaries": "",
+    "preferredContentTypes": ""
   }
 }

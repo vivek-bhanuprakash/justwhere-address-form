@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Configuration as APIIndividualsConfig, DefaultApi as APIIndividuals } from "./../apis/individuals";
-import { ID, OnErrorFcn } from "./jw-address";
+import React, { useEffect, useRef } from "react";
+import { CurrentUserInfoRequest, GetCurrentUserInfo, IndividualID, JWError, UserID } from "../util";
+import { OnErrorFcn } from "./types";
 
 // Source: https://stackoverflow.com/questions/53446020/how-to-compare-oldvalues-and-newvalues-on-react-hooks-useeffect
 const usePrevious = <T extends unknown>(value: T): T | undefined => {
@@ -11,91 +11,56 @@ const usePrevious = <T extends unknown>(value: T): T | undefined => {
   return ref.current;
 };
 
-export const LOGIN_MAX_RETRIES = 29;
-export const LOGIN_CHECK_INTERVAL = 2000;
-
-export type OnLoginComplete = (userID: string, individualID: ID) => void;
+export type OnLoginComplete = (userID: string, individualID: IndividualID) => void;
 
 interface JWLoginProps {
   hostPort: string;
   onLoginComplete: OnLoginComplete;
   onError?: OnErrorFcn;
-
-  retries?: number;
-  interval?: number;
 }
 
-const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, retries, interval }) => {
-  const prevHostPort = usePrevious(hostPort);
+const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError }) => {
+  const onLogin = async () => {
+    window.open(`${hostPort}/api/login`, "_top");
+  };
 
-  let WATCHDOG_MAX_RETRIES = retries || LOGIN_MAX_RETRIES;
-  let WATCHDOG_INTERVAL = interval || LOGIN_CHECK_INTERVAL; // 2 seconds
-
-  let watchDogTimerID: number;
-  let watchDogRetries: number = 0;
-
-  const loginWatchDog = async () => {
-    console.info("JWLogin: WatchDog retry #", watchDogRetries + 1);
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
-    }
-
-    const config: APIIndividualsConfig = new APIIndividualsConfig({
-      basePath: `${hostPort}/api`,
-      baseOptions: {
-        withCredentials: true,
-      },
-    });
-
-    const api = new APIIndividuals(config);
-
-    const response = await api.getCurrentUserInfo();
-    const userInfo = response.data || null;
-    if (userInfo !== null) {
-      if (typeof userInfo.IndividualID === "string" && userInfo.IndividualID.length > 0) {
-        return onLoginComplete(userInfo.UserID || "", userInfo.IndividualID || "");
+  const errorHandler = (e: JWError) => {
+    if (onError !== null && onError !== undefined) {
+      if (typeof onError === "function") {
+        onError(e);
+      } else {
+        console.error("JustWhere: error handler must be a function. it is ", typeof onError);
       }
-    }
-
-    watchDogRetries++;
-    if (watchDogRetries < WATCHDOG_MAX_RETRIES) {
-      watchDogTimerID = window.setTimeout(async () => {
-        await loginWatchDog();
-      }, WATCHDOG_INTERVAL);
     } else {
-      watchDogRetries = 0;
+      console.warn("JustWhere: no error handler provided");
     }
   };
 
-  const onLogin = async () => {
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      clearTimeout(watchDogTimerID);
+  const loginHandler = (userID: UserID, individualID: IndividualID) => {
+    if (onLoginComplete !== null && onLoginComplete !== undefined) {
+      if (typeof onLoginComplete === "function") {
+        onLoginComplete(userID, individualID);
+      } else {
+        console.error("JustWhere: login complete handler must be a function. it is ", typeof onLoginComplete);
+        errorHandler(new JWError("login complete handler must be a function"));
+      }
+    } else {
+      console.warn("JustWhere: no login complete handler provided");
     }
-
-    window.open(`${hostPort}/api/login`, "_blank");
-    watchDogRetries = 0;
-    watchDogTimerID = window.setTimeout(loginWatchDog, WATCHDOG_INTERVAL);
   };
 
   useEffect(() => {
-    let checkInProgress: boolean = false;
-    if (watchDogTimerID !== undefined && watchDogTimerID !== null) {
-      checkInProgress = true;
-      console.info("JWLogin: Login was in progress.  It will be interrupted and retried.");
-      clearTimeout(watchDogTimerID);
-    }
-
-    console.info("JWLogin: WatchDog retries:", WATCHDOG_MAX_RETRIES, ", interval:", WATCHDOG_INTERVAL);
-    console.info("JWLogin: Host previous:", prevHostPort, ", current:", hostPort);
-
-    if (checkInProgress) {
-      if (prevHostPort !== hostPort) {
-        onLogin();
-        return;
-      } else {
-        loginWatchDog();
+    const fnEffect = async () => {
+      try {
+        const request: CurrentUserInfoRequest = { hostPort: hostPort, authToken: "" };
+        const response = await GetCurrentUserInfo(request);
+        loginHandler(response.userID, response.individualID);
+      } catch (e) {
+        errorHandler(e as JWError);
       }
-    }
+    };
+
+    fnEffect();
   }, [hostPort]);
 
   return (
@@ -115,9 +80,14 @@ const JWLogin: React.FC<JWLoginProps> = ({ hostPort, onLoginComplete, onError, r
           </p>
           <div className="mt-3 text-center">
             <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">Click</p>
-            <button type="button" className="sm:text-md mx-1 text-sm font-semibold uppercase tracking-wide text-blue-600 underline" onClick={onLogin}>
+            <a
+              href="#"
+              referrerPolicy="origin"
+              className="sm:text-md mx-1 text-sm font-semibold uppercase tracking-wide text-blue-600 underline"
+              onClick={onLogin}
+            >
               Here
-            </button>
+            </a>
             <p className="sm:text-md inline text-sm font-normal uppercase text-slate-800">
               to Sign In to <span className="font-semibold uppercase">JustWhere</span>
             </p>
